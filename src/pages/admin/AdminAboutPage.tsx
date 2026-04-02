@@ -1,0 +1,194 @@
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Container,
+  Grid,
+  Paper,
+  Stack,
+  TextField,
+  Typography
+} from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { defaultStorySettings, getStorySettings, type SiteStorySettings } from "../../data/siteContent";
+
+const storageKey = "truecare-site-story";
+
+export default function AdminAboutPage() {
+  const [draft, setDraft] = useState<SiteStorySettings>(getStorySettings());
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(storageKey);
+      if (saved) {
+        setDraft((current) => ({ ...current, ...JSON.parse(saved) }));
+      }
+    } catch {
+      // Keep defaults.
+    }
+  }, []);
+
+  const highlightsText = useMemo(() => draft.highlights.join("\n"), [draft.highlights]);
+  const statsText = useMemo(
+    () => draft.stats.map((stat) => `${stat.value}|${stat.label}`).join("\n"),
+    [draft.stats]
+  );
+
+  const saveAbout = () => {
+    window.localStorage.setItem(storageKey, JSON.stringify(draft));
+    setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+  };
+
+  const resetAbout = () => {
+    setDraft(defaultStorySettings);
+    window.localStorage.removeItem(storageKey);
+    setSavedAt(null);
+  };
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        py: { xs: 3, md: 5 },
+        background:
+          "radial-gradient(circle at top left, rgba(31,157,148,0.12), transparent 28%), linear-gradient(180deg, #f4fbfb 0%, #ecf6f4 100%)"
+      }}
+    >
+      <Container>
+        <Stack spacing={3}>
+          <Button component={Link} to="/admin" variant="text" startIcon={<ArrowBackRoundedIcon />}>
+            Back to Admin
+          </Button>
+
+          <Box>
+            <Typography variant="h2" sx={{ mb: 1 }}>
+              About Editor
+            </Typography>
+            <Typography color="text.secondary" sx={{ maxWidth: 760 }}>
+              Edit the welcome section, trust-building copy, and the stats shown on the home page.
+            </Typography>
+          </Box>
+
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, lg: 7 }}>
+              <Card sx={{ borderRadius: 3, border: "1px solid rgba(16,42,67,0.08)" }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Stack spacing={2}>
+                    <TextField
+                      label="Eyebrow"
+                      value={draft.eyebrow}
+                      onChange={(event) =>
+                        setDraft((current) => ({ ...current, eyebrow: event.target.value }))
+                      }
+                      fullWidth
+                    />
+                    <TextField
+                      label="Title"
+                      value={draft.title}
+                      onChange={(event) =>
+                        setDraft((current) => ({ ...current, title: event.target.value }))
+                      }
+                      fullWidth
+                      multiline
+                      minRows={2}
+                    />
+                    <TextField
+                      label="Description"
+                      value={draft.description}
+                      onChange={(event) =>
+                        setDraft((current) => ({ ...current, description: event.target.value }))
+                      }
+                      fullWidth
+                      multiline
+                      minRows={3}
+                    />
+                    <TextField
+                      label="Highlights"
+                      value={highlightsText}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          highlights: event.target.value.split("\n").map((item) => item.trim()).filter(Boolean)
+                        }))
+                      }
+                      helperText="One highlight per line."
+                      fullWidth
+                      multiline
+                      minRows={4}
+                    />
+                    <TextField
+                      label="Stats"
+                      value={statsText}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          stats: event.target.value
+                            .split("\n")
+                            .map((item) => item.trim())
+                            .filter(Boolean)
+                            .map((item) => {
+                              const [value = "", ...rest] = item.split("|");
+                              return { value: value.trim(), label: rest.join("|").trim() };
+                            })
+                            .filter((item) => item.value && item.label)
+                        }))
+                      }
+                      helperText="Use format: value|label. One stat per line."
+                      fullWidth
+                      multiline
+                      minRows={4}
+                    />
+
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                      <Button variant="contained" onClick={saveAbout} startIcon={<SaveRoundedIcon />}>
+                        Save About
+                      </Button>
+                      <Button variant="outlined" onClick={resetAbout}>
+                        Reset to Defaults
+                      </Button>
+                    </Stack>
+
+                    {savedAt ? <Chip label={`Saved at ${savedAt}`} color="success" variant="outlined" /> : null}
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid size={{ xs: 12, lg: 5 }}>
+              <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: "#ffffff", border: "1px solid rgba(31,157,148,0.12)" }}>
+                <Typography variant="h5" sx={{ mb: 2 }}>
+                  Preview
+                </Typography>
+                <Stack spacing={1.5}>
+                  <Typography variant="overline" sx={{ color: "primary.main", fontWeight: 700 }}>
+                    {draft.eyebrow}
+                  </Typography>
+                  <Typography sx={{ fontWeight: 800 }}>{draft.title}</Typography>
+                  <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                    {draft.description}
+                  </Typography>
+                  <Box>
+                    <Typography sx={{ fontWeight: 700, mb: 1 }}>Highlights</Typography>
+                    <Stack spacing={0.75}>
+                      {draft.highlights.map((item) => (
+                        <Typography key={item} variant="body2" color="text.secondary">
+                          • {item}
+                        </Typography>
+                      ))}
+                    </Stack>
+                  </Box>
+                </Stack>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Stack>
+      </Container>
+    </Box>
+  );
+}
