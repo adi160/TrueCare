@@ -21,6 +21,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.4.1",
     "typescript": "^5.8.3",
+    "vercel": "^50.38.2",
     "vite": "^6.2.2"
   }
 }
