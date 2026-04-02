@@ -29,12 +29,14 @@ import {
   Typography
 } from "@mui/material";
 import { Link } from "react-router-dom";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   dashboardPeriods,
   type DashboardLead,
   type DashboardPeriodKey
 } from "../data/adminDashboard";
+import { useAdminAuth } from "../context/AdminAuthContext";
+import { loadDashboardPeriodData, type LiveDashboardData } from "../services/backend";
 
 const periodOrder: DashboardPeriodKey[] = ["daily", "weekly", "monthly"];
 
@@ -193,7 +195,27 @@ function ContentLinkCard({
 
 export default function AdminDashboardPage() {
   const [period, setPeriod] = useState<DashboardPeriodKey>("weekly");
-  const data = dashboardPeriods[period];
+  const { user, profile, signOut } = useAdminAuth();
+  const logoutLabel = `${profile?.fullName ?? user?.email ?? "Admin"} Sign Out`;
+  const [data, setData] = useState<LiveDashboardData>({
+    ...dashboardPeriods[period],
+    live: false
+  });
+
+  useEffect(() => {
+    let active = true;
+
+    void loadDashboardPeriodData(period).then((nextData) => {
+      if (active) {
+        setData(nextData);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [period]);
+
   const maxTrend = useMemo(
     () => Math.max(...data.trend.map((item) => item.value), 1),
     [data.trend]
@@ -209,35 +231,53 @@ export default function AdminDashboardPage() {
       }}
     >
       <Container>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
-          <Box>
+        <Box sx={{ mb: 4 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
             <Button
               component={Link}
               to="/"
               variant="text"
               startIcon={<ArrowBackRoundedIcon />}
-              sx={{ mb: 1 }}
+              sx={{ px: 0 }}
             >
               Back to Site
             </Button>
-            <Typography variant="h2" sx={{ lineHeight: 1.05, mb: 1 }}>
-              Admin Dashboard
-            </Typography>
-            <Typography color="text.secondary" sx={{ maxWidth: 760 }}>
-              Track visitor volume, consultation intent, and real booking conversion across daily,
-              weekly, and monthly views.
-            </Typography>
-          </Box>
-
-          <Stack direction="row" spacing={1.25} sx={{ display: { xs: "none", md: "flex" } }}>
-            <Button variant="outlined" startIcon={<RefreshRoundedIcon />}>
-              Sync Data
-            </Button>
-            <Button variant="contained" startIcon={<CalendarMonthOutlinedIcon />}>
-              Export Report
+            <Button variant="text" onClick={() => void signOut()} sx={{ minWidth: 0, px: 0.5 }}>
+              {logoutLabel}
             </Button>
           </Stack>
-        </Stack>
+
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            justifyContent="space-between"
+            alignItems={{ xs: "flex-start", md: "center" }}
+            spacing={2}
+          >
+            <Box>
+              <Typography variant="h2" sx={{ lineHeight: 1.05, mb: 1 }}>
+                Admin Dashboard
+              </Typography>
+              <Typography color="text.secondary" sx={{ maxWidth: 760 }}>
+                Track visitor volume, consultation intent, and real booking conversion across
+                daily, weekly, and monthly views.
+              </Typography>
+            </Box>
+
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{ display: { xs: "none", md: "flex" }, flexShrink: 0 }}
+            >
+              <Button variant="outlined" startIcon={<RefreshRoundedIcon />}>
+                Sync Data
+              </Button>
+              <Button variant="contained" startIcon={<CalendarMonthOutlinedIcon />}>
+                Export Report
+              </Button>
+            </Stack>
+          </Stack>
+        </Box>
 
         <Paper
           elevation={0}
@@ -331,16 +371,23 @@ export default function AdminDashboardPage() {
                     <Typography variant="h4" sx={{ mb: 0.75 }}>
                       Traffic Trend
                     </Typography>
-                    <Typography color="text.secondary">
-                      Site visitors for the selected period
-                    </Typography>
-                  </Box>
-                  <Chip
-                    icon={<CheckCircleOutlineIcon />}
-                    label={`${data.label} overview`}
-                    color="primary"
-                    variant="outlined"
-                  />
+                  <Typography color="text.secondary">
+                    Site visitors for the selected period
+                  </Typography>
+                </Box>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Chip
+                      icon={<CheckCircleOutlineIcon />}
+                      label={`${data.label} overview`}
+                      color="primary"
+                      variant="outlined"
+                    />
+                    <Chip
+                      label={data.live ? "Live Supabase" : "Demo fallback"}
+                      color={data.live ? "success" : "default"}
+                      variant="outlined"
+                    />
+                  </Stack>
                 </Stack>
 
                 <Stack

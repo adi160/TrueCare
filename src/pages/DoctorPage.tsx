@@ -2,9 +2,11 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import { Box, Button, Chip, Container, Grid, Paper, Stack, Typography } from "@mui/material";
 import { Link } from "react-router-dom";
 import { clinicInfo, getDoctorProfile } from "../data/siteContent";
+import { useTrackPageView } from "../hooks/useTrackPageView";
 
 export default function DoctorPage() {
   const doctorProfile = getDoctorProfile();
+  useTrackPageView("doctor");
 
   return (
     <Box

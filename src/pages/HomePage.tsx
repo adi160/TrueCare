@@ -10,6 +10,7 @@ import GallerySection from "../components/sections/GallerySection";
 import HeroSection from "../components/sections/HeroSection";
 import ServicesSection from "../components/sections/ServicesSection";
 import TestimonialsSection from "../components/sections/TestimonialsSection";
+import { useTrackPageView } from "../hooks/useTrackPageView";
 
 function scrollToSection(id: string): void {
   if (id === "home") {
@@ -33,6 +34,7 @@ function scrollToSection(id: string): void {
 
 export default function HomePage() {
   const navigate = useNavigate();
+  useTrackPageView("home");
 
   return (
     <Box sx={{ backgroundColor: "background.default" }}>

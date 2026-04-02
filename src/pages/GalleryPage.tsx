@@ -1,8 +1,11 @@
 import { Box, Button, Container, Typography } from "@mui/material";
 import { Link } from "react-router-dom";
 import GallerySection from "../components/sections/GallerySection";
+import { useTrackPageView } from "../hooks/useTrackPageView";
 
 export default function GalleryPage() {
+  useTrackPageView("gallery");
+
   return (
     <Box sx={{ backgroundColor: "background.default", minHeight: "100vh" }}>
       <Container sx={{ pt: 12, pb: 3 }}>

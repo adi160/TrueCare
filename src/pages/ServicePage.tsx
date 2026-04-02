@@ -2,6 +2,7 @@ import { Box, Button, Chip, Container, Paper, Stack, Typography } from "@mui/mat
 import { Link, useParams } from "react-router-dom";
 import LeadCaptureForm from "../components/forms/LeadCaptureForm";
 import { getServiceBySlug } from "../data/services";
+import { useTrackPageView } from "../hooks/useTrackPageView";
 
 interface ServiceRouteParams {
   slug?: string;
@@ -10,6 +11,7 @@ interface ServiceRouteParams {
 export default function ServicePage() {
   const { slug } = useParams<ServiceRouteParams>();
   const service = getServiceBySlug(slug);
+  useTrackPageView(`service/${slug ?? "unknown"}`);
 
   if (!service) {
     return (
