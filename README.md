@@ -75,3 +75,12 @@ The form layer currently uses a typed mock API service so you can connect a real
    values ('<paste-auth-user-id-here>', 'admin', 'Your Name');
    ```
 3. Open the app at `#/admin/login` and sign in with that email and password.
+
+## Live GitHub Pages setup
+
+1. In your GitHub repo, open `Settings -> Secrets and variables -> Actions`.
+2. Add two repository secrets:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+3. Push to `main` again or run the Pages workflow manually.
+4. GitHub Actions will inject those values during the build, so the live site can use Supabase too.
