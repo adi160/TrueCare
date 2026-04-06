@@ -9,7 +9,7 @@ import {
   Stack,
   Typography
 } from "@mui/material";
-import { getGalleryItems } from "../../data/gallery";
+import { useGalleryItems } from "../../data/gallery";
 
 interface GallerySectionProps {
   onViewAll?: () => void;
@@ -20,7 +20,7 @@ export default function GallerySection({
   onViewAll,
   showViewAll = true
 }: GallerySectionProps) {
-  const galleryItems = getGalleryItems();
+  const galleryItems = useGalleryItems();
 
   return (
     <Box

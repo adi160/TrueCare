@@ -1,9 +1,9 @@
 import FormatQuoteIcon from "@mui/icons-material/FormatQuote";
 import { Box, Container, Grid, Paper, Typography } from "@mui/material";
-import { getPatientTestimonials } from "../../data/siteContent";
+import { usePatientTestimonials } from "../../data/siteContent";
 
 export default function TestimonialsSection() {
-  const patientTestimonials = getPatientTestimonials();
+  const patientTestimonials = usePatientTestimonials();
 
   return (
     <Box

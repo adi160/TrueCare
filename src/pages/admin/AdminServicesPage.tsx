@@ -18,6 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Service } from "../../types/clinic";
+import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-extra-services";
 
@@ -40,18 +41,13 @@ export default function AdminServicesPage() {
     benefitsText: ""
   });
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) {
-        setServices(JSON.parse(saved) as Service[]);
-      }
-    } catch {
-      setServices([]);
-    }
+    void hydrateSectionValue<Service[]>(storageKey, [], storageKey).then((value) => {
+      setServices(value);
+    });
   }, []);
 
-  const persist = (nextServices: Service[]) => {
-    window.localStorage.setItem(storageKey, JSON.stringify(nextServices));
+  const persist = async (nextServices: Service[]) => {
+    await saveSectionValue(storageKey, nextServices, storageKey);
     setServices(nextServices);
   };
 
@@ -72,7 +68,7 @@ export default function AdminServicesPage() {
       return;
     }
 
-    persist([...services, nextService]);
+    void persist([...services, nextService]);
     setDraft({
       name: "",
       slug: "",
@@ -84,7 +80,7 @@ export default function AdminServicesPage() {
   };
 
   const removeService = (slug: string) => {
-    persist(services.filter((service) => service.slug !== slug));
+    void persist(services.filter((service) => service.slug !== slug));
   };
 
   return (

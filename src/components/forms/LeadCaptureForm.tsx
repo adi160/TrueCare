@@ -66,7 +66,7 @@ export default function LeadCaptureForm({
       />
       <TextField
         fullWidth
-        label="Message"
+        label="Message (Optional)"
         multiline
         minRows={4}
         value={values.message}

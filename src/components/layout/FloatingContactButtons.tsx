@@ -1,9 +1,11 @@
 import CallIcon from "@mui/icons-material/Call";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import { Box, Button, Stack } from "@mui/material";
-import { clinicInfo } from "../../data/siteContent";
+import { useClinicInfo } from "../../data/siteContent";
 
 export default function FloatingContactButtons() {
+  const clinicInfo = useClinicInfo();
+
   return (
     <Box
       sx={{

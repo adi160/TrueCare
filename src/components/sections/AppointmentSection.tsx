@@ -2,10 +2,10 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import FormatQuoteIcon from "@mui/icons-material/FormatQuote";
 import { Box, Container, Grid, Paper, Stack, Typography } from "@mui/material";
 import LeadCaptureForm from "../forms/LeadCaptureForm";
-import { getAppointmentSettings } from "../../data/siteContent";
+import { useAppointmentSettings } from "../../data/siteContent";
 
 export default function AppointmentSection() {
-  const appointment = getAppointmentSettings();
+  const appointment = useAppointmentSettings();
 
   return (
     <Box

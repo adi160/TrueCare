@@ -23,8 +23,8 @@ import {
   Toolbar,
   Typography
 } from "@mui/material";
-import { clinicInfo, getTopBarSettings } from "../../data/siteContent";
-import { getServices } from "../../data/services";
+import { useClinicInfo, useTopBarSettings } from "../../data/siteContent";
+import { useServices } from "../../data/services";
 
 interface NavbarProps {
   onNavigate: (id: string) => void;
@@ -42,8 +42,9 @@ export default function Navbar({ onNavigate, onSelectService, onOpenGallery }: N
   const [open, setOpen] = React.useState<boolean>(false);
   const [servicesAnchorEl, setServicesAnchorEl] = React.useState<null | HTMLElement>(null);
   const servicesMenuOpen = Boolean(servicesAnchorEl);
-  const topBarSettings = getTopBarSettings();
-  const services = getServices();
+  const topBarSettings = useTopBarSettings();
+  const clinicInfo = useClinicInfo();
+  const services = useServices();
 
   const handleItemClick = (id: string) => {
     onNavigate(id);

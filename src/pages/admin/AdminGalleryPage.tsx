@@ -18,6 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { GalleryItem } from "../../data/gallery";
+import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-extra-gallery-items";
 
@@ -32,18 +33,13 @@ export default function AdminGalleryPage() {
   });
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) {
-        setGalleryItems(JSON.parse(saved) as GalleryItem[]);
-      }
-    } catch {
-      setGalleryItems([]);
-    }
+    void hydrateSectionValue<GalleryItem[]>(storageKey, [], storageKey).then((value) => {
+      setGalleryItems(value);
+    });
   }, []);
 
-  const persist = (nextItems: GalleryItem[]) => {
-    window.localStorage.setItem(storageKey, JSON.stringify(nextItems));
+  const persist = async (nextItems: GalleryItem[]) => {
+    await saveSectionValue(storageKey, nextItems, storageKey);
     setGalleryItems(nextItems);
   };
 
@@ -60,7 +56,7 @@ export default function AdminGalleryPage() {
       return;
     }
 
-    persist([...galleryItems, nextItem]);
+    void persist([...galleryItems, nextItem]);
     setDraft({
       title: "",
       treatment: "",
@@ -71,7 +67,7 @@ export default function AdminGalleryPage() {
   };
 
   const removeGalleryItem = (title: string) => {
-    persist(galleryItems.filter((item) => item.title !== title));
+    void persist(galleryItems.filter((item) => item.title !== title));
   };
 
   return (

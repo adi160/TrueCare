@@ -16,6 +16,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultDoctorProfile, getDoctorProfile } from "../../data/siteContent";
+import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-site-doctor";
 
@@ -24,28 +25,23 @@ export default function AdminDoctorPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) {
-        setDraft((current) => ({ ...current, ...JSON.parse(saved) }));
-      }
-    } catch {
-      // Keep defaults.
-    }
+    void hydrateSectionValue(storageKey, defaultDoctorProfile, storageKey).then((value) => {
+      setDraft(value);
+    });
   }, []);
 
   const qualificationsText = useMemo(() => draft.qualifications.join("\n"), [draft.qualifications]);
   const expertiseText = useMemo(() => draft.expertise.join("\n"), [draft.expertise]);
   const philosophyText = useMemo(() => draft.philosophy.join("\n"), [draft.philosophy]);
 
-  const saveDoctor = () => {
-    window.localStorage.setItem(storageKey, JSON.stringify(draft));
+  const saveDoctor = async () => {
+    await saveSectionValue(storageKey, draft, storageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
 
-  const resetDoctor = () => {
+  const resetDoctor = async () => {
     setDraft(defaultDoctorProfile);
-    window.localStorage.removeItem(storageKey);
+    await saveSectionValue(storageKey, defaultDoctorProfile, storageKey);
     setSavedAt(null);
   };
 

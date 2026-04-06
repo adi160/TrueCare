@@ -4,7 +4,7 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import { Box, Button, Chip, Container, Grid, Paper, Stack, Typography } from "@mui/material";
 import { motion } from "framer-motion";
-import { clinicInfo, getHomeSectionSettings, getStorySettings } from "../../data/siteContent";
+import { useClinicInfo, useHomeSectionSettings, useStorySettings } from "../../data/siteContent";
 
 interface HeroSectionProps {
   onPrimaryAction: () => void;
@@ -17,8 +17,9 @@ export default function HeroSection({
   onPrimaryAction,
   onSecondaryAction
 }: HeroSectionProps) {
-  const home = getHomeSectionSettings();
-  const story = getStorySettings();
+  const home = useHomeSectionSettings();
+  const story = useStorySettings();
+  const clinicInfo = useClinicInfo();
   const bulletPoints = home.bulletPoints.length > 0 ? home.bulletPoints : story.highlights;
 
   return (

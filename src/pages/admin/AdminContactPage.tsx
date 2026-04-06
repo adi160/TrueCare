@@ -16,6 +16,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultContactSettings, getContactSettings, type ContactSectionSettings } from "../../data/siteContent";
+import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-site-contact";
 
@@ -24,24 +25,19 @@ export default function AdminContactPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) {
-        setDraft((current) => ({ ...current, ...JSON.parse(saved) }));
-      }
-    } catch {
-      // Keep defaults.
-    }
+    void hydrateSectionValue(storageKey, defaultContactSettings, storageKey).then((value) => {
+      setDraft(value);
+    });
   }, []);
 
-  const saveContact = () => {
-    window.localStorage.setItem(storageKey, JSON.stringify(draft));
+  const saveContact = async () => {
+    await saveSectionValue(storageKey, draft, storageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
 
-  const resetContact = () => {
+  const resetContact = async () => {
     setDraft(defaultContactSettings);
-    window.localStorage.removeItem(storageKey);
+    await saveSectionValue(storageKey, defaultContactSettings, storageKey);
     setSavedAt(null);
   };
 

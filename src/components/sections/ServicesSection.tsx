@@ -11,7 +11,7 @@ import {
   Typography
 } from "@mui/material";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-import { getServices } from "../../data/services";
+import { useServices } from "../../data/services";
 
 interface ServicesSectionProps {
   onSelectService: (slug: string) => void;
@@ -20,7 +20,7 @@ interface ServicesSectionProps {
 export default function ServicesSection({
   onSelectService
 }: ServicesSectionProps) {
-  const services = getServices();
+  const services = useServices();
 
   return (
     <Box

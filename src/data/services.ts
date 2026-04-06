@@ -1,6 +1,7 @@
 import type { Service } from "../types/clinic";
+import { useSectionValue } from "../services/siteContentStore";
 
-const defaultServices: Service[] = [
+export const defaultServices: Service[] = [
   {
     slug: "rhinoplasty",
     name: "Rhinoplasty",
@@ -66,4 +67,14 @@ export function getServices(): Service[] {
 
 export function getServiceBySlug(slug?: string): Service | undefined {
   return getServices().find((service) => service.slug === slug);
+}
+
+export function useServices(): Service[] {
+  const extraServices = useSectionValue<Service[]>(
+    "truecare-extra-services",
+    [],
+    "truecare-extra-services"
+  );
+
+  return [...defaultServices, ...extraServices];
 }

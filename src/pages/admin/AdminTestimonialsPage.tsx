@@ -18,6 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultPatientTestimonials, getPatientTestimonials } from "../../data/siteContent";
+import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-site-testimonials";
 
@@ -37,18 +38,13 @@ export default function AdminTestimonialsPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) {
-        setItems(JSON.parse(saved) as typeof defaultPatientTestimonials);
-      }
-    } catch {
-      // Keep defaults.
-    }
+    void hydrateSectionValue(storageKey, defaultPatientTestimonials, storageKey).then((value) => {
+      setItems(value);
+    });
   }, []);
 
-  const persist = (nextItems: typeof defaultPatientTestimonials) => {
-    window.localStorage.setItem(storageKey, JSON.stringify(nextItems));
+  const persist = async (nextItems: typeof defaultPatientTestimonials) => {
+    await saveSectionValue(storageKey, nextItems, storageKey);
     setItems(nextItems);
   };
 
@@ -57,17 +53,17 @@ export default function AdminTestimonialsPage() {
       return;
     }
 
-    persist([...items, { ...draft }]);
+    void persist([...items, { ...draft }]);
     setDraft({ name: "", treatment: "", quote: "" });
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
 
   const removeItem = (name: string) => {
-    persist(items.filter((item) => item.name !== name));
+    void persist(items.filter((item) => item.name !== name));
   };
 
   const resetItems = () => {
-    persist(defaultPatientTestimonials);
+    void persist(defaultPatientTestimonials);
     setSavedAt(null);
   };
 

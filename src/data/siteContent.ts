@@ -1,4 +1,5 @@
 import type { ClinicInfo } from "../types/clinic";
+import { useSectionValue } from "../services/siteContentStore";
 
 export interface SiteHeaderSettings {
   clinicName: string;
@@ -40,12 +41,28 @@ export interface FooterSectionSettings {
   address: string;
   note: string;
   copyrightNote: string;
+  socialLinks: Array<{
+    platform: "instagram" | "facebook" | "youtube" | "linkedin";
+    label: string;
+    href: string;
+  }>;
 }
 
 export interface ContactSectionSettings {
   phone: string;
   whatsapp: string;
   email: string;
+}
+
+function normalizeFooterSettings(
+  value: Partial<FooterSectionSettings> | null | undefined
+): FooterSectionSettings {
+  return {
+    ...defaultFooterSettings,
+    ...(value ?? {}),
+    socialLinks:
+      value?.socialLinks?.length ? value.socialLinks : defaultFooterSettings.socialLinks
+  };
 }
 
 export const defaultHeaderSettings: SiteHeaderSettings = {
@@ -108,7 +125,29 @@ export const defaultFooterSettings: FooterSectionSettings = {
   address:
     "Siddharth Nagar, Opp Baidyanath palace Bailey Road, more, near jagdeo path, Patna, Bihar 800014",
   note: "Replace these placeholder links with your real clinic social handles anytime.",
-  copyrightNote: "Designed for a premium cosmetic clinic experience."
+  copyrightNote: "Designed for a premium cosmetic clinic experience.",
+  socialLinks: [
+    {
+      label: "Instagram",
+      href: "https://instagram.com/truecareclinic",
+      platform: "instagram"
+    },
+    {
+      label: "Facebook",
+      href: "https://facebook.com/truecareclinic",
+      platform: "facebook"
+    },
+    {
+      label: "YouTube",
+      href: "https://youtube.com/@truecareclinic",
+      platform: "youtube"
+    },
+    {
+      label: "LinkedIn",
+      href: "https://linkedin.com/company/truecareclinic",
+      platform: "linkedin"
+    }
+  ]
 };
 
 export const defaultContactSettings: ContactSectionSettings = {
@@ -135,6 +174,10 @@ export function getSiteHeaderSettings(): SiteHeaderSettings {
   }
 }
 
+export function useSiteHeaderSettings(): SiteHeaderSettings {
+  return useSectionValue("truecare-site-header", defaultHeaderSettings, "truecare-site-header");
+}
+
 export function getTopBarSettings(): SiteTopBarSettings {
   if (typeof window === "undefined") {
     return defaultTopBarSettings;
@@ -151,6 +194,10 @@ export function getTopBarSettings(): SiteTopBarSettings {
   } catch {
     return defaultTopBarSettings;
   }
+}
+
+export function useTopBarSettings(): SiteTopBarSettings {
+  return useSectionValue("truecare-site-topbar", defaultTopBarSettings, "truecare-site-topbar");
 }
 
 export function getHomeSectionSettings(): HomeSectionSettings {
@@ -171,6 +218,10 @@ export function getHomeSectionSettings(): HomeSectionSettings {
   }
 }
 
+export function useHomeSectionSettings(): HomeSectionSettings {
+  return useSectionValue("truecare-site-home", defaultHomeSectionSettings, "truecare-site-home");
+}
+
 export function getStorySettings(): SiteStorySettings {
   if (typeof window === "undefined") {
     return defaultStorySettings;
@@ -187,6 +238,10 @@ export function getStorySettings(): SiteStorySettings {
   } catch {
     return defaultStorySettings;
   }
+}
+
+export function useStorySettings(): SiteStorySettings {
+  return useSectionValue("truecare-site-story", defaultStorySettings, "truecare-site-story");
 }
 
 export function getAppointmentSettings(): AppointmentSectionSettings {
@@ -207,6 +262,14 @@ export function getAppointmentSettings(): AppointmentSectionSettings {
   }
 }
 
+export function useAppointmentSettings(): AppointmentSectionSettings {
+  return useSectionValue(
+    "truecare-site-appointment",
+    defaultAppointmentSettings,
+    "truecare-site-appointment"
+  );
+}
+
 export function getFooterSettings(): FooterSectionSettings {
   if (typeof window === "undefined") {
     return defaultFooterSettings;
@@ -219,10 +282,20 @@ export function getFooterSettings(): FooterSectionSettings {
       return defaultFooterSettings;
     }
 
-    return { ...defaultFooterSettings, ...JSON.parse(saved) };
+    return normalizeFooterSettings(JSON.parse(saved));
   } catch {
     return defaultFooterSettings;
   }
+}
+
+export function useFooterSettings(): FooterSectionSettings {
+  const footer = useSectionValue<FooterSectionSettings>(
+    "truecare-site-footer",
+    defaultFooterSettings,
+    "truecare-site-footer"
+  );
+
+  return normalizeFooterSettings(footer);
 }
 
 export function getContactSettings(): ContactSectionSettings {
@@ -241,6 +314,10 @@ export function getContactSettings(): ContactSectionSettings {
   } catch {
     return defaultContactSettings;
   }
+}
+
+export function useContactSettings(): ContactSectionSettings {
+  return useSectionValue("truecare-site-contact", defaultContactSettings, "truecare-site-contact");
 }
 
 export const clinicInfo: ClinicInfo = {
@@ -263,6 +340,21 @@ export const clinicInfo: ClinicInfo = {
     return getDoctorProfile().doctorBio;
   }
 };
+
+export function useClinicInfo(): ClinicInfo {
+  const header = useSiteHeaderSettings();
+  const contact = useContactSettings();
+  const doctor = useDoctorProfile();
+
+  return {
+    name: header.clinicName,
+    tagline: header.tagline,
+    phone: contact.phone,
+    whatsapp: contact.whatsapp,
+    doctorName: doctor.doctorName,
+    doctorBio: doctor.doctorBio
+  };
+}
 
 export const defaultPatientTestimonials: Array<{
   name: string;
@@ -311,6 +403,18 @@ export function getPatientTestimonials(): Array<{
   }
 }
 
+export function usePatientTestimonials(): Array<{
+  name: string;
+  treatment: string;
+  quote: string;
+}> {
+  return useSectionValue(
+    "truecare-site-testimonials",
+    defaultPatientTestimonials,
+    "truecare-site-testimonials"
+  );
+}
+
 export function getClinicContactDetails(): Array<{ label: string; value: string }> {
   const contactSettings = getContactSettings();
 
@@ -327,33 +431,6 @@ export const footerLinks: Array<{ id: string; label: string }> = [
   { id: "services", label: "Services" },
   { id: "doctor", label: "Doctor" },
   { id: "appointment", label: "Consultation" }
-];
-
-export const socialLinks: Array<{
-  label: string;
-  href: string;
-  platform: "instagram" | "facebook" | "youtube" | "linkedin";
-}> = [
-  {
-    label: "Instagram",
-    href: "https://instagram.com/truecareclinic",
-    platform: "instagram"
-  },
-  {
-    label: "Facebook",
-    href: "https://facebook.com/truecareclinic",
-    platform: "facebook"
-  },
-  {
-    label: "YouTube",
-    href: "https://youtube.com/@truecareclinic",
-    platform: "youtube"
-  },
-  {
-    label: "LinkedIn",
-    href: "https://linkedin.com/company/truecareclinic",
-    platform: "linkedin"
-  }
 ];
 
 export const defaultDoctorProfile = {
@@ -400,4 +477,8 @@ export function getDoctorProfile() {
   } catch {
     return defaultDoctorProfile;
   }
+}
+
+export function useDoctorProfile() {
+  return useSectionValue("truecare-site-doctor", defaultDoctorProfile, "truecare-site-doctor");
 }

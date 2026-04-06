@@ -20,6 +20,7 @@ import {
   getAppointmentSettings,
   type AppointmentSectionSettings
 } from "../../data/siteContent";
+import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-site-appointment";
 
@@ -28,26 +29,21 @@ export default function AdminAppointmentPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) {
-        setDraft((current) => ({ ...current, ...JSON.parse(saved) }));
-      }
-    } catch {
-      // Keep defaults.
-    }
+    void hydrateSectionValue(storageKey, defaultAppointmentSettings, storageKey).then((value) => {
+      setDraft(value);
+    });
   }, []);
 
   const bulletsText = useMemo(() => draft.bullets.join("\n"), [draft.bullets]);
 
-  const saveAppointment = () => {
-    window.localStorage.setItem(storageKey, JSON.stringify(draft));
+  const saveAppointment = async () => {
+    await saveSectionValue(storageKey, draft, storageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
 
-  const resetAppointment = () => {
+  const resetAppointment = async () => {
     setDraft(defaultAppointmentSettings);
-    window.localStorage.removeItem(storageKey);
+    await saveSectionValue(storageKey, defaultAppointmentSettings, storageKey);
     setSavedAt(null);
   };
 

@@ -16,6 +16,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultStorySettings, getStorySettings, type SiteStorySettings } from "../../data/siteContent";
+import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-site-story";
 
@@ -24,14 +25,9 @@ export default function AdminAboutPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) {
-        setDraft((current) => ({ ...current, ...JSON.parse(saved) }));
-      }
-    } catch {
-      // Keep defaults.
-    }
+    void hydrateSectionValue(storageKey, defaultStorySettings, storageKey).then((value) => {
+      setDraft(value);
+    });
   }, []);
 
   const highlightsText = useMemo(() => draft.highlights.join("\n"), [draft.highlights]);
@@ -40,14 +36,14 @@ export default function AdminAboutPage() {
     [draft.stats]
   );
 
-  const saveAbout = () => {
-    window.localStorage.setItem(storageKey, JSON.stringify(draft));
+  const saveAbout = async () => {
+    await saveSectionValue(storageKey, draft, storageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
 
-  const resetAbout = () => {
+  const resetAbout = async () => {
     setDraft(defaultStorySettings);
-    window.localStorage.removeItem(storageKey);
+    await saveSectionValue(storageKey, defaultStorySettings, storageKey);
     setSavedAt(null);
   };
 

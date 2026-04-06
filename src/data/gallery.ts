@@ -1,3 +1,5 @@
+import { useSectionValue } from "../services/siteContentStore";
+
 export interface GalleryItem {
   title: string;
   treatment: string;
@@ -6,7 +8,7 @@ export interface GalleryItem {
   afterImage: string;
 }
 
-const defaultGalleryItems: GalleryItem[] = [
+export const defaultGalleryItems: GalleryItem[] = [
   {
     title: "Nasal Refinement",
     treatment: "Rhinoplasty",
@@ -56,4 +58,14 @@ export function getGalleryItems(): GalleryItem[] {
   } catch {
     return defaultGalleryItems;
   }
+}
+
+export function useGalleryItems(): GalleryItem[] {
+  const extraItems = useSectionValue<GalleryItem[]>(
+    "truecare-extra-gallery-items",
+    [],
+    "truecare-extra-gallery-items"
+  );
+
+  return [...defaultGalleryItems, ...extraItems];
 }

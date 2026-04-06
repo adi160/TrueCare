@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultContactSettings, defaultTopBarSettings, getContactSettings, getTopBarSettings } from "../../data/siteContent";
 import type { ContactSectionSettings, SiteTopBarSettings } from "../../data/siteContent";
+import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const topBarStorageKey = "truecare-site-topbar";
 const contactStorageKey = "truecare-site-contact";
@@ -27,31 +28,29 @@ export default function AdminTopBarPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const savedTopBar = window.localStorage.getItem(topBarStorageKey);
-      const savedContact = window.localStorage.getItem(contactStorageKey);
-      if (savedTopBar) {
-        setTopBarDraft((current) => ({ ...current, ...JSON.parse(savedTopBar) }));
+    void hydrateSectionValue(topBarStorageKey, defaultTopBarSettings, topBarStorageKey).then(
+      (value) => {
+        setTopBarDraft(value);
       }
-      if (savedContact) {
-        setContactDraft((current) => ({ ...current, ...JSON.parse(savedContact) }));
+    );
+    void hydrateSectionValue(contactStorageKey, defaultContactSettings, contactStorageKey).then(
+      (value) => {
+        setContactDraft(value);
       }
-    } catch {
-      // Keep defaults.
-    }
+    );
   }, []);
 
-  const saveTopBar = () => {
-    window.localStorage.setItem(topBarStorageKey, JSON.stringify(topBarDraft));
-    window.localStorage.setItem(contactStorageKey, JSON.stringify(contactDraft));
+  const saveTopBar = async () => {
+    await saveSectionValue(topBarStorageKey, topBarDraft, topBarStorageKey);
+    await saveSectionValue(contactStorageKey, contactDraft, contactStorageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
 
-  const resetTopBar = () => {
+  const resetTopBar = async () => {
     setTopBarDraft(defaultTopBarSettings);
     setContactDraft(defaultContactSettings);
-    window.localStorage.removeItem(topBarStorageKey);
-    window.localStorage.removeItem(contactStorageKey);
+    await saveSectionValue(topBarStorageKey, defaultTopBarSettings, topBarStorageKey);
+    await saveSectionValue(contactStorageKey, defaultContactSettings, contactStorageKey);
     setSavedAt(null);
   };
 

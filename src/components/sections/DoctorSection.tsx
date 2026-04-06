@@ -1,12 +1,13 @@
 import { Box, Button, Container, Grid, Paper, Typography } from "@mui/material";
-import { clinicInfo, getDoctorProfile } from "../../data/siteContent";
+import { useClinicInfo, useDoctorProfile } from "../../data/siteContent";
 
 interface DoctorSectionProps {
   onViewProfile: () => void;
 }
 
 export default function DoctorSection({ onViewProfile }: DoctorSectionProps) {
-  const doctorProfile = getDoctorProfile();
+  const doctorProfile = useDoctorProfile();
+  const clinicInfo = useClinicInfo();
 
   return (
     <Box

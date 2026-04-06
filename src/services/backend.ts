@@ -15,6 +15,14 @@ export interface ConsultationLeadRecord extends AppointmentSubmission {
   status: "new" | "contacted" | "booked" | "rejected";
 }
 
+export interface AdminLeadEntry extends ConsultationLeadRecord {
+  id: number;
+  phoneNumber: string;
+  serviceSlug: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface LiveDashboardData extends DashboardPeriodData {
   live: boolean;
 }
@@ -87,7 +95,7 @@ function aggregateChannels(sources: string[]): DashboardPeriodData["channels"] {
     .map(([label, value]) => ({ label, value }));
 }
 
-async function incrementDailyStats(
+export async function incrementDailyStats(
   client: NonNullable<ReturnType<typeof getSupabaseClient>>,
   dateKey: string,
   visitorDelta = 0,
@@ -178,6 +186,91 @@ export async function submitConsultationLead(
     success: true,
     message: "Your request has been received. Our team will contact you shortly.",
     referenceId
+  };
+}
+
+export async function loadAdminLeads(): Promise<AdminLeadEntry[]> {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    return [];
+  }
+
+  const { data, error } = await client
+    .from("consultation_leads")
+    .select(
+      "id, reference_id, full_name, phone_number, procedure, message, source, service_slug, status, created_at, updated_at"
+    )
+    .order("created_at", { ascending: false });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => ({
+    id: row.id,
+    referenceId: row.reference_id,
+    fullName: row.full_name,
+    phoneNumber: row.phone_number,
+    procedure: row.procedure,
+    message: row.message,
+    source: row.source,
+    serviceSlug: row.service_slug ?? null,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }));
+}
+
+export async function updateConsultationLeadStatus(
+  referenceId: string,
+  nextStatus: ConsultationLeadRecord["status"]
+): Promise<{ success: boolean; message: string }> {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    return {
+      success: false,
+      message: "Supabase is not configured."
+    };
+  }
+
+  const { data: currentLead, error: loadError } = await client
+    .from("consultation_leads")
+    .select("status, created_at")
+    .eq("reference_id", referenceId)
+    .maybeSingle();
+
+  if (loadError || !currentLead) {
+    return {
+      success: false,
+      message: "Lead not found."
+    };
+  }
+
+  const { error } = await client
+    .from("consultation_leads")
+    .update({ status: nextStatus })
+    .eq("reference_id", referenceId);
+
+  if (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+
+  const oldBooked = currentLead.status === "booked" ? 1 : 0;
+  const newBooked = nextStatus === "booked" ? 1 : 0;
+  const bookingDelta = newBooked - oldBooked;
+
+  if (bookingDelta !== 0) {
+    await incrementDailyStats(client, toDateKey(new Date()), 0, 0, bookingDelta);
+  }
+
+  return {
+    success: true,
+    message: "Lead status updated."
   };
 }
 

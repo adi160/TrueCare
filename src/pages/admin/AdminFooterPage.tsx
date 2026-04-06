@@ -20,32 +20,40 @@ import {
   getFooterSettings,
   type FooterSectionSettings
 } from "../../data/siteContent";
+import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-site-footer";
 
+function normalizeFooterDraft(value: FooterSectionSettings): FooterSectionSettings {
+  return {
+    ...defaultFooterSettings,
+    ...value,
+    socialLinks: value.socialLinks?.length ? value.socialLinks : defaultFooterSettings.socialLinks
+  };
+}
+
 export default function AdminFooterPage() {
-  const [draft, setDraft] = useState<FooterSectionSettings>(getFooterSettings());
+  const [draft, setDraft] = useState<FooterSectionSettings>(
+    normalizeFooterDraft(getFooterSettings())
+  );
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) {
-        setDraft((current) => ({ ...current, ...JSON.parse(saved) }));
-      }
-    } catch {
-      // Keep defaults.
-    }
+    void hydrateSectionValue(storageKey, defaultFooterSettings, storageKey).then((value) => {
+      setDraft(normalizeFooterDraft(value));
+    });
   }, []);
 
-  const saveFooter = () => {
-    window.localStorage.setItem(storageKey, JSON.stringify(draft));
+  const saveFooter = async () => {
+    const nextDraft = normalizeFooterDraft(draft);
+    await saveSectionValue(storageKey, nextDraft, storageKey);
+    setDraft(nextDraft);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
 
-  const resetFooter = () => {
+  const resetFooter = async () => {
     setDraft(defaultFooterSettings);
-    window.localStorage.removeItem(storageKey);
+    await saveSectionValue(storageKey, defaultFooterSettings, storageKey);
     setSavedAt(null);
   };
 
@@ -54,27 +62,28 @@ export default function AdminFooterPage() {
       sx={{
         minHeight: "100vh",
         py: { xs: 3, md: 5 },
-        background: "linear-gradient(180deg, #0f2323 0%, #162f2f 100%)"
+        background:
+          "radial-gradient(circle at top left, rgba(31,157,148,0.12), transparent 28%), linear-gradient(180deg, #f4fbfb 0%, #ecf6f4 100%)"
       }}
     >
       <Container>
         <Stack spacing={3}>
-          <Button component={Link} to="/admin" variant="text" startIcon={<ArrowBackRoundedIcon />} sx={{ color: "white" }}>
+          <Button component={Link} to="/admin" variant="text" startIcon={<ArrowBackRoundedIcon />}>
             Back to Admin
           </Button>
 
           <Box>
-            <Typography variant="h2" sx={{ mb: 1, color: "white" }}>
+            <Typography variant="h2" sx={{ mb: 1 }}>
               Footer Editor
             </Typography>
-            <Typography sx={{ maxWidth: 760, color: "rgba(255,255,255,0.72)" }}>
+            <Typography color="text.secondary" sx={{ maxWidth: 760 }}>
               Update the address line and helper copy shown in the site footer.
             </Typography>
           </Box>
 
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, lg: 7 }}>
-              <Card sx={{ borderRadius: 3, border: "1px solid rgba(255,255,255,0.14)" }}>
+              <Card sx={{ borderRadius: 3, border: "1px solid rgba(16,42,67,0.08)" }}>
                 <CardContent sx={{ p: 3 }}>
                   <Stack spacing={2}>
                     <TextField
@@ -106,6 +115,83 @@ export default function AdminFooterPage() {
                       fullWidth
                     />
 
+                    <TextField
+                      label="Instagram link"
+                      value={
+                        normalizeFooterDraft(draft).socialLinks.find(
+                          (item) => item.platform === "instagram"
+                        )?.href ?? ""
+                      }
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          socialLinks: normalizeFooterDraft(current).socialLinks.map((item) =>
+                            item.platform === "instagram"
+                              ? { ...item, href: event.target.value }
+                              : item
+                          )
+                        }))
+                      }
+                      fullWidth
+                    />
+                    <TextField
+                      label="Facebook link"
+                      value={
+                        normalizeFooterDraft(draft).socialLinks.find(
+                          (item) => item.platform === "facebook"
+                        )?.href ?? ""
+                      }
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          socialLinks: normalizeFooterDraft(current).socialLinks.map((item) =>
+                            item.platform === "facebook"
+                              ? { ...item, href: event.target.value }
+                              : item
+                          )
+                        }))
+                      }
+                      fullWidth
+                    />
+                    <TextField
+                      label="YouTube link"
+                      value={
+                        normalizeFooterDraft(draft).socialLinks.find(
+                          (item) => item.platform === "youtube"
+                        )?.href ?? ""
+                      }
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          socialLinks: normalizeFooterDraft(current).socialLinks.map((item) =>
+                            item.platform === "youtube"
+                              ? { ...item, href: event.target.value }
+                              : item
+                          )
+                        }))
+                      }
+                      fullWidth
+                    />
+                    <TextField
+                      label="LinkedIn link"
+                      value={
+                        normalizeFooterDraft(draft).socialLinks.find(
+                          (item) => item.platform === "linkedin"
+                        )?.href ?? ""
+                      }
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          socialLinks: normalizeFooterDraft(current).socialLinks.map((item) =>
+                            item.platform === "linkedin"
+                              ? { ...item, href: event.target.value }
+                              : item
+                          )
+                        }))
+                      }
+                      fullWidth
+                    />
+
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                       <Button variant="contained" onClick={saveFooter} startIcon={<SaveRoundedIcon />}>
                         Save Footer
@@ -122,7 +208,15 @@ export default function AdminFooterPage() {
             </Grid>
 
             <Grid size={{ xs: 12, lg: 5 }}>
-              <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: "#ffffff", border: "1px solid rgba(255,255,255,0.14)" }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  bgcolor: "#ffffff",
+                  border: "1px solid rgba(31,157,148,0.12)"
+                }}
+              >
                 <Typography variant="h5" sx={{ mb: 2 }}>
                   Preview
                 </Typography>
@@ -132,7 +226,17 @@ export default function AdminFooterPage() {
                     {draft.address}
                   </Typography>
                   <Typography color="text.secondary">{draft.note}</Typography>
-                  <Typography color="text.secondary">{draft.copyrightNote}</Typography>
+                    <Typography color="text.secondary">{draft.copyrightNote}</Typography>
+                  <Box>
+                    <Typography sx={{ fontWeight: 700, mb: 1 }}>Social Links</Typography>
+                    <Stack spacing={0.5}>
+                      {normalizeFooterDraft(draft).socialLinks.map((item) => (
+                        <Typography key={item.platform} color="text.secondary" variant="body2">
+                          {item.label}: {item.href}
+                        </Typography>
+                      ))}
+                    </Stack>
+                  </Box>
                 </Stack>
               </Paper>
             </Grid>

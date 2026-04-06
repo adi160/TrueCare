@@ -13,11 +13,10 @@ import {
   Typography
 } from "@mui/material";
 import {
-  clinicInfo,
-  getClinicContactDetails,
-  getFooterSettings,
-  footerLinks,
-  socialLinks
+  useClinicInfo,
+  useContactSettings,
+  useFooterSettings,
+  footerLinks
 } from "../../data/siteContent";
 
 interface FooterProps {
@@ -32,8 +31,15 @@ const socialIconMap = {
 };
 
 export default function Footer({ onNavigate }: FooterProps) {
-  const footerSettings = getFooterSettings();
-  const clinicContactDetails = getClinicContactDetails();
+  const footerSettings = useFooterSettings();
+  const clinicContact = useContactSettings();
+  const clinic = useClinicInfo();
+  const clinicContactDetails = [
+    { label: "Phone", value: clinic.phone },
+    { label: "WhatsApp", value: clinic.whatsapp },
+    { label: "Email", value: clinicContact.email },
+    { label: "Location", value: "Patna, Bihar" }
+  ];
 
   return (
     <Box component="footer" sx={{ bgcolor: "#0f2323", color: "white", pt: 8, pb: 3 }}>
@@ -47,7 +53,7 @@ export default function Footer({ onNavigate }: FooterProps) {
         >
           <Box sx={{ maxWidth: 360, width: "100%" }}>
             <Typography variant="h4" sx={{ mb: 1.5, color: "white" }}>
-              {clinicInfo.name}
+              {clinic.name}
             </Typography>
             <Typography sx={{ color: "rgba(255,255,255,0.78)", lineHeight: 1.8 }}>
               {footerSettings.address}
@@ -73,9 +79,9 @@ export default function Footer({ onNavigate }: FooterProps) {
             >
               Get Direction
             </Button>
-            <Typography sx={{ mt: 2.25, color: "rgba(255,255,255,0.78)" }}>{clinicInfo.phone}</Typography>
+            <Typography sx={{ mt: 2.25, color: "rgba(255,255,255,0.78)" }}>{clinic.phone}</Typography>
             <Typography sx={{ mt: 0.75, color: "rgba(255,255,255,0.78)" }}>
-              care@truecareclinic.com
+              {clinicContact.email}
             </Typography>
           </Box>
 
@@ -129,7 +135,7 @@ export default function Footer({ onNavigate }: FooterProps) {
               <Box sx={{ minWidth: { md: 220 } }}>
                 <Typography sx={{ fontWeight: 700, mb: 2 }}>Follow Us</Typography>
                 <Stack direction="row" spacing={1}>
-                  {socialLinks.map((item) => {
+                  {footerSettings.socialLinks.map((item) => {
                     const Icon = socialIconMap[item.platform];
 
                     return (
@@ -170,8 +176,8 @@ export default function Footer({ onNavigate }: FooterProps) {
           spacing={1.5}
           justifyContent="space-between"
         >
-          <Typography sx={{ color: "rgba(255,255,255,0.58)" }}>
-            Copyright © {new Date().getFullYear()} {clinicInfo.name}. All rights reserved.
+            <Typography sx={{ color: "rgba(255,255,255,0.58)" }}>
+            Copyright © {new Date().getFullYear()} {clinic.name}. All rights reserved.
           </Typography>
           <Typography sx={{ color: "rgba(255,255,255,0.58)" }}>
             {footerSettings.copyrightNote}

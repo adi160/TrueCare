@@ -25,9 +25,7 @@ export function validateAppointmentForm(
     errors.procedure = `${APPOINTMENT_FIELD_LABELS.procedure} is required.`;
   }
 
-  if (!values.message.trim()) {
-    errors.message = `${APPOINTMENT_FIELD_LABELS.message} is required.`;
-  } else if (values.message.trim().length < 10) {
+  if (values.message.trim() && values.message.trim().length < 10) {
     errors.message = "Message should be at least 10 characters.";
   }
 

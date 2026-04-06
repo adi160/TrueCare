@@ -20,6 +20,7 @@ import {
   getHomeSectionSettings,
   type HomeSectionSettings
 } from "../../data/siteContent";
+import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-site-home";
 
@@ -28,26 +29,21 @@ export default function AdminHomePage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) {
-        setDraft((current) => ({ ...current, ...JSON.parse(saved) }));
-      }
-    } catch {
-      // Keep defaults.
-    }
+    void hydrateSectionValue(storageKey, defaultHomeSectionSettings, storageKey).then((value) => {
+      setDraft(value);
+    });
   }, []);
 
   const bulletPointsText = useMemo(() => draft.bulletPoints.join("\n"), [draft.bulletPoints]);
 
-  const saveHome = () => {
-    window.localStorage.setItem(storageKey, JSON.stringify(draft));
+  const saveHome = async () => {
+    await saveSectionValue(storageKey, draft, storageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
 
-  const resetHome = () => {
+  const resetHome = async () => {
     setDraft(defaultHomeSectionSettings);
-    window.localStorage.removeItem(storageKey);
+    await saveSectionValue(storageKey, defaultHomeSectionSettings, storageKey);
     setSavedAt(null);
   };
 

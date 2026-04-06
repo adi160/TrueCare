@@ -1,9 +1,10 @@
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import { Box, Container, Grid, Paper, Stack, Typography } from "@mui/material";
-import { clinicInfo, getStorySettings } from "../../data/siteContent";
+import { useClinicInfo, useStorySettings } from "../../data/siteContent";
 
 export default function AboutSection() {
-  const story = getStorySettings();
+  const story = useStorySettings();
+  const clinicInfo = useClinicInfo();
 
   return (
     <Box

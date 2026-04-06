@@ -347,6 +347,37 @@ export default function AdminDashboardPage() {
               helper={`${data.visitorToBookingRate.toFixed(2)}% visitor-to-booking`}
             />
           </Grid>
+          <Grid size={{ xs: 12, lg: 12 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2.5,
+                borderRadius: 3,
+                border: "1px solid rgba(31,157,148,0.12)",
+                background: "linear-gradient(180deg, #f6fffe 0%, #effcf9 100%)",
+                boxShadow: "0 18px 48px rgba(16,42,67,0.06)"
+              }}
+            >
+              <Stack
+                direction={{ xs: "column", md: "row" }}
+                justifyContent="space-between"
+                alignItems={{ xs: "flex-start", md: "center" }}
+                spacing={2}
+              >
+                <Box>
+                  <Typography variant="h5" sx={{ mb: 0.75 }}>
+                    Consultation Leads
+                  </Typography>
+                  <Typography color="text.secondary">
+                    Review booking enquiries and update their pipeline status from the lead board.
+                  </Typography>
+                </Box>
+                <Button component={Link} to="/admin/leads" variant="contained">
+                  Open Leads Board
+                </Button>
+              </Stack>
+            </Paper>
+          </Grid>
         </Grid>
 
         <Grid container spacing={3}>

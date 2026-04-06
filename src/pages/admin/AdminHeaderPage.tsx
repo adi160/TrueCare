@@ -20,6 +20,7 @@ import {
   getSiteHeaderSettings,
   type SiteHeaderSettings
 } from "../../data/siteContent";
+import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-site-header";
 
@@ -28,24 +29,19 @@ export default function AdminHeaderPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) {
-        setDraft((current) => ({ ...current, ...JSON.parse(saved) }));
-      }
-    } catch {
-      // Keep the current draft if storage is unavailable.
-    }
+    void hydrateSectionValue(storageKey, defaultHeaderSettings, storageKey).then((value) => {
+      setDraft(value);
+    });
   }, []);
 
-  const saveHeader = () => {
-    window.localStorage.setItem(storageKey, JSON.stringify(draft));
+  const saveHeader = async () => {
+    await saveSectionValue(storageKey, draft, storageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
 
-  const resetHeader = () => {
+  const resetHeader = async () => {
     setDraft(defaultHeaderSettings);
-    window.localStorage.removeItem(storageKey);
+    await saveSectionValue(storageKey, defaultHeaderSettings, storageKey);
     setSavedAt(null);
   };
 
