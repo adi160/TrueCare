@@ -2,6 +2,30 @@
 
 True Care Clinic is a React + Vite + TypeScript clinic website with a live admin dashboard, editable site sections, consultation lead tracking, and Supabase-backed content storage.
 
+## Folder Structure
+
+```text
+TrueCare/
+├── src/
+│   ├── App.tsx
+│   ├── components/
+│   │   ├── layout/
+│   │   ├── forms/
+│   │   └── sections/
+│   ├── data/
+│   ├── hooks/
+│   ├── lib/
+│   ├── pages/
+│   │   └── admin/
+│   ├── services/
+│   ├── types/
+│   └── theme/
+├── supabase/
+├── public/
+├── index.html
+└── vite.config.ts
+```
+
 ## What’s Included
 
 - Public marketing site with home, about, doctor, services, gallery, and consultation sections
