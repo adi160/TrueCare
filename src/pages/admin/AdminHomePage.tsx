@@ -20,6 +20,7 @@ import {
   getHomeSectionSettings,
   type HomeSectionSettings
 } from "../../data/siteContent";
+import ImageUploadField from "../../components/admin/ImageUploadField";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-site-home";
@@ -97,13 +98,13 @@ export default function AdminHomePage() {
                       multiline
                       minRows={2}
                     />
-                    <TextField
+                    <ImageUploadField
                       label="Hero image URL"
+                      folder="home"
                       value={draft.heroImage}
-                      onChange={(event) =>
-                        setDraft((current) => ({ ...current, heroImage: event.target.value }))
-                      }
-                      fullWidth
+                      onChange={(value) => setDraft((current) => ({ ...current, heroImage: value }))}
+                      previewAlt={draft.heroImageAlt}
+                      helperText="Upload a hero image or paste an image URL. The live home section will use this value."
                     />
                     <TextField
                       label="Hero image alt text"

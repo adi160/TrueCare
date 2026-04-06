@@ -44,6 +44,20 @@ function formatCount(value: number): string {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
+function escapeCsvValue(value: string | number): string {
+  const text = String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function escapeHtml(value: string | number): string {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function statusColor(status: DashboardLead["status"]): "success" | "warning" | "info" {
   if (status === "Booked") return "success";
   if (status === "Interested") return "info";
@@ -195,6 +209,8 @@ function ContentLinkCard({
 
 export default function AdminDashboardPage() {
   const [period, setPeriod] = useState<DashboardPeriodKey>("weekly");
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const { user, profile, signOut } = useAdminAuth();
   const logoutLabel = `${profile?.fullName ?? user?.email ?? "Admin"} Sign Out`;
   const [data, setData] = useState<LiveDashboardData>({
@@ -202,19 +218,357 @@ export default function AdminDashboardPage() {
     live: false
   });
 
+  async function refreshDashboardData(): Promise<void> {
+    setIsSyncing(true);
+    try {
+      const nextData = await loadDashboardPeriodData(period);
+      setData(nextData);
+    } finally {
+      setIsSyncing(false);
+    }
+  }
+
   useEffect(() => {
-    let active = true;
-
-    void loadDashboardPeriodData(period).then((nextData) => {
-      if (active) {
-        setData(nextData);
-      }
-    });
-
-    return () => {
-      active = false;
-    };
+    void refreshDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
+
+  async function handleExportReport(): Promise<void> {
+    setIsExporting(true);
+
+    try {
+      const maxTrend = Math.max(...data.trend.map((point) => point.value), 1);
+      const maxChannel = Math.max(...data.channels.map((channel) => channel.value), 1);
+
+      const reportHtml = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>True Care Dashboard Report</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4fbfb;
+      --panel: #ffffff;
+      --ink: #10353a;
+      --muted: #5f7a7e;
+      --accent: #1f9d94;
+      --accent-soft: rgba(31, 157, 148, 0.12);
+      --border: rgba(16, 42, 67, 0.1);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #f8fffe 0%, var(--bg) 100%);
+      color: var(--ink);
+    }
+    .page {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }
+    .hero {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      line-height: 1.05;
+    }
+    .subtle {
+      color: var(--muted);
+      margin: 0;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin: 24px 0 28px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 18px 40px rgba(16, 42, 67, 0.06);
+    }
+    .card-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .card-value {
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    .card-helper {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: 0 18px 40px rgba(16, 42, 67, 0.06);
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+    .panel h2 {
+      margin: 0 0 16px;
+      font-size: 22px;
+    }
+    .chart {
+      display: grid;
+      gap: 12px;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr) 52px;
+      gap: 12px;
+      align-items: center;
+    }
+    .bar-label, .bar-value {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .bar-track {
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(16, 42, 67, 0.08);
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent) 0%, #45c9bf 100%);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 14px;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(16, 42, 67, 0.08);
+      font-size: 14px;
+    }
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: rgba(31, 157, 148, 0.04);
+    }
+    .status {
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(31, 157, 148, 0.1);
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .lead-grid {
+      display: grid;
+      gap: 12px;
+    }
+    .lead {
+      padding: 14px 16px;
+      border: 1px solid rgba(16, 42, 67, 0.08);
+      border-radius: 16px;
+      background: #fff;
+    }
+    .lead-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .lead-name {
+      font-size: 16px;
+      font-weight: 800;
+      margin: 0 0 3px;
+    }
+    .lead-meta {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .footer-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .bar-row { grid-template-columns: 72px minmax(0, 1fr) 44px; }
+    }
+    @media (max-width: 640px) {
+      .page { padding: 22px 16px 36px; }
+      .grid { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 1fr; gap: 6px; }
+      .bar-value { justify-self: end; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <div class="pill">True Care Clinic Report</div>
+        <h1>${escapeHtml(data.label)} Dashboard</h1>
+        <p class="subtle">Updated ${escapeHtml(data.updated)}. This export captures the selected dashboard snapshot.</p>
+      </div>
+      <div class="pill">Generated ${escapeHtml(new Date().toLocaleString())}</div>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <div class="card-label">Total Visitors</div>
+        <div class="card-value">${escapeHtml(data.totalVisitors)}</div>
+        <div class="card-helper">All tracked page visits in the selected period.</div>
+      </article>
+      <article class="card">
+        <div class="card-label">Consultation Requests</div>
+        <div class="card-value">${escapeHtml(data.consultationRequests)}</div>
+        <div class="card-helper">Submitted booking enquiries from the site.</div>
+      </article>
+      <article class="card">
+        <div class="card-label">Confirmed Bookings</div>
+        <div class="card-value">${escapeHtml(data.confirmedBookings)}</div>
+        <div class="card-helper">Leads marked as booked by the admin team.</div>
+      </article>
+      <article class="card">
+        <div class="card-label">Conversion Rate</div>
+        <div class="card-value">${escapeHtml(data.leadCloseRate.toFixed(1))}%</div>
+        <div class="card-helper">Confirmed bookings divided by consultation requests.</div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>Traffic Trend</h2>
+      <div class="chart">
+        ${data.trend
+          .map((point) => {
+            const width = Math.max(8, Math.round((point.value / maxTrend) * 100));
+            return `
+              <div class="bar-row">
+                <div class="bar-label">${escapeHtml(point.label)}</div>
+                <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
+                <div class="bar-value">${escapeHtml(point.value)}</div>
+              </div>`;
+          })
+          .join("")}
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Traffic Channels</h2>
+      <div class="chart">
+        ${data.channels
+          .map((channel) => {
+            const width = Math.max(8, Math.round((channel.value / maxChannel) * 100));
+            return `
+              <div class="bar-row">
+                <div class="bar-label">${escapeHtml(channel.label)}</div>
+                <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
+                <div class="bar-value">${escapeHtml(channel.value)}</div>
+              </div>`;
+          })
+          .join("")}
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Recent Leads</h2>
+      <div class="lead-grid">
+        ${data.recentLeads
+          .map(
+            (lead) => `
+              <article class="lead">
+                <div class="lead-top">
+                  <div>
+                    <p class="lead-name">${escapeHtml(lead.name)}</p>
+                    <p class="lead-meta">${escapeHtml(lead.interest)}</p>
+                    <p class="lead-meta">${escapeHtml(lead.source)} • ${escapeHtml(lead.time)}</p>
+                  </div>
+                  <span class="status">${escapeHtml(lead.status)}</span>
+                </div>
+              </article>`
+          )
+          .join("")}
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Summary</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Total Visitors</td><td>${escapeHtml(data.totalVisitors)}</td></tr>
+          <tr><td>Consultation Requests</td><td>${escapeHtml(data.consultationRequests)}</td></tr>
+          <tr><td>Confirmed Bookings</td><td>${escapeHtml(data.confirmedBookings)}</td></tr>
+          <tr><td>Lead Close Rate</td><td>${escapeHtml(data.leadCloseRate.toFixed(1))}%</td></tr>
+          <tr><td>Visitor To Booking Rate</td><td>${escapeHtml(data.visitorToBookingRate.toFixed(1))}%</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <div class="footer-note">
+      Generated from the current dashboard snapshot. Open this file in a browser to review the report or print it to PDF.
+    </div>
+  </main>
+</body>
+</html>`;
+
+      const blob = new Blob([reportHtml], { type: "text/html;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `truecare-dashboard-${period}-${new Date().toISOString().slice(0, 10)}.html`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   const maxTrend = useMemo(
     () => Math.max(...data.trend.map((item) => item.value), 1),
@@ -269,11 +623,21 @@ export default function AdminDashboardPage() {
               alignItems="center"
               sx={{ display: { xs: "none", md: "flex" }, flexShrink: 0 }}
             >
-              <Button variant="outlined" startIcon={<RefreshRoundedIcon />}>
-                Sync Data
+              <Button
+                variant="outlined"
+                startIcon={<RefreshRoundedIcon />}
+                onClick={() => void refreshDashboardData()}
+                disabled={isSyncing}
+              >
+                {isSyncing ? "Syncing..." : "Sync Data"}
               </Button>
-              <Button variant="contained" startIcon={<CalendarMonthOutlinedIcon />}>
-                Export Report
+              <Button
+                variant="contained"
+                startIcon={<CalendarMonthOutlinedIcon />}
+                onClick={() => void handleExportReport()}
+                disabled={isExporting}
+              >
+                {isExporting ? "Exporting..." : "Export Report"}
               </Button>
             </Stack>
           </Stack>
@@ -560,7 +924,7 @@ export default function AdminDashboardPage() {
                   Recent Leads
                 </Typography>
                 <Stack spacing={1.5}>
-                  {data.recentLeads.map((lead) => (
+                  {data.recentLeads.slice(0, 3).map((lead) => (
                     <Paper
                       key={`${lead.name}-${lead.time}`}
                       elevation={0}

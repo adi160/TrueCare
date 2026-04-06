@@ -9,6 +9,10 @@ export function hasSupabaseConfig(): boolean {
   return Boolean(supabaseUrl && supabaseAnonKey);
 }
 
+export function isAdminAuthEnabled(): boolean {
+  return import.meta.env.PROD && hasSupabaseConfig();
+}
+
 export function getSupabaseClient(): SupabaseClient | null {
   if (!hasSupabaseConfig()) {
     return null;

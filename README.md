@@ -72,6 +72,7 @@ VITE_SUPABASE_ANON_KEY=your_publishable_key
 
 4. If the base schema is already installed, run `supabase/daily-stats-migration.sql` when adding the daily visitor summary layer.
 5. Run `supabase/admin-auth-migration.sql` once for the admin profile/auth flow.
+6. Run `supabase/storage-migration.sql` once to create the `clinic-assets` storage bucket for image uploads.
 
 ## Admin Login
 
@@ -95,6 +96,17 @@ The shared content store saves each section as one row in `site_sections`:
 - the live site reads the same stored content and falls back to defaults if Supabase is unavailable
 
 The footer social media handles are also editable now from the footer admin page.
+
+## Image Uploads
+
+The admin editors now support direct image uploads for:
+
+- home hero image
+- doctor profile image
+- service hero images
+- gallery before/after images
+
+Images upload into Supabase Storage under the `clinic-assets` bucket and then save the returned public URL back into the matching content record.
 
 ## Live GitHub Pages
 

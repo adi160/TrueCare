@@ -114,6 +114,7 @@ export default function HeroSection({
                     width: "100%",
                     height: { xs: 320, md: 500 },
                     objectFit: "cover",
+                    objectPosition: "center",
                     borderRadius: 2.5,
                     mb: 2.5
                   }}

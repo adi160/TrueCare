@@ -16,6 +16,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultDoctorProfile, getDoctorProfile } from "../../data/siteContent";
+import ImageUploadField from "../../components/admin/ImageUploadField";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-site-doctor";
@@ -111,13 +112,13 @@ export default function AdminDoctorPage() {
                       multiline
                       minRows={3}
                     />
-                    <TextField
+                    <ImageUploadField
                       label="Profile image URL"
+                      folder="doctor"
                       value={draft.image}
-                      onChange={(event) =>
-                        setDraft((current) => ({ ...current, image: event.target.value }))
-                      }
-                      fullWidth
+                      onChange={(value) => setDraft((current) => ({ ...current, image: value }))}
+                      previewAlt={draft.doctorName}
+                      helperText="Upload the doctor image once and the live doctor sections will use it everywhere."
                     />
                     <TextField
                       label="Experience"

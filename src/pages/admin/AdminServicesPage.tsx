@@ -4,6 +4,7 @@ import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import {
   Box,
   Button,
+  ButtonBase,
   Card,
   CardContent,
   Chip,
@@ -15,9 +16,10 @@ import {
   TextField,
   Typography
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Service } from "../../types/clinic";
+import ImageUploadField from "../../components/admin/ImageUploadField";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-extra-services";
@@ -32,6 +34,7 @@ function createServiceSlug(name: string): string {
 
 export default function AdminServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
+  const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [draft, setDraft] = useState({
     name: "",
     slug: "",
@@ -46,12 +49,46 @@ export default function AdminServicesPage() {
     });
   }, []);
 
+  const shortDescriptionWords = useMemo(
+    () => draft.shortDescription.trim().split(/\s+/).filter(Boolean),
+    [draft.shortDescription]
+  );
+  const shortDescriptionError =
+    draft.shortDescription.trim().length > 0 &&
+    (shortDescriptionWords.length < 8 ||
+      shortDescriptionWords.length > 10 ||
+      draft.shortDescription.trim().length > 110);
+
   const persist = async (nextServices: Service[]) => {
     await saveSectionValue(storageKey, nextServices, storageKey);
     setServices(nextServices);
   };
 
-  const addService = () => {
+  const resetDraft = () => {
+    setEditingSlug(null);
+    setDraft({
+      name: "",
+      slug: "",
+      shortDescription: "",
+      heroImage: "",
+      details: "",
+      benefitsText: ""
+    });
+  };
+
+  const loadServiceIntoForm = (service: Service) => {
+    setEditingSlug(service.slug);
+    setDraft({
+      name: service.name,
+      slug: service.slug,
+      shortDescription: service.shortDescription,
+      heroImage: service.heroImage,
+      details: service.details,
+      benefitsText: service.benefits.join(", ")
+    });
+  };
+
+  const saveService = () => {
     const nextService: Service = {
       slug: draft.slug || createServiceSlug(draft.name),
       name: draft.name.trim(),
@@ -68,19 +105,35 @@ export default function AdminServicesPage() {
       return;
     }
 
-    void persist([...services, nextService]);
-    setDraft({
-      name: "",
-      slug: "",
-      shortDescription: "",
-      heroImage: "",
-      details: "",
-      benefitsText: ""
-    });
+    if (
+      nextService.shortDescription.split(/\s+/).filter(Boolean).length < 8 ||
+      nextService.shortDescription.split(/\s+/).filter(Boolean).length > 10 ||
+      nextService.shortDescription.length > 110
+    ) {
+      return;
+    }
+
+    const duplicate = services.find(
+      (service) => service.slug === nextService.slug && service.slug !== editingSlug
+    );
+
+    if (duplicate) {
+      return;
+    }
+
+    const nextServices = editingSlug
+      ? services.map((service) => (service.slug === editingSlug ? nextService : service))
+      : [...services, nextService];
+
+    void persist(nextServices);
+    resetDraft();
   };
 
   const removeService = (slug: string) => {
     void persist(services.filter((service) => service.slug !== slug));
+    if (editingSlug === slug) {
+      resetDraft();
+    }
   };
 
   return (
@@ -113,6 +166,14 @@ export default function AdminServicesPage() {
               <Card sx={{ borderRadius: 3, border: "1px solid rgba(16,42,67,0.08)" }}>
                 <CardContent sx={{ p: 3 }}>
                   <Stack spacing={2}>
+                    {editingSlug ? (
+                      <Chip
+                        label="Editing existing service"
+                        color="secondary"
+                        variant="outlined"
+                        sx={{ alignSelf: "flex-start" }}
+                      />
+                    ) : null}
                     <TextField
                       label="Service name"
                       value={draft.name}
@@ -136,17 +197,24 @@ export default function AdminServicesPage() {
                       onChange={(event) =>
                         setDraft((current) => ({ ...current, shortDescription: event.target.value }))
                       }
+                      error={shortDescriptionError}
+                      helperText={
+                        shortDescriptionError
+                          ? "Use 8-10 words and keep it under about 110 characters."
+                          : `${shortDescriptionWords.length} / 8-10 words. Keep it short enough for two lines.`
+                      }
                       fullWidth
                       multiline
                       minRows={2}
+                      inputProps={{ maxLength: 110 }}
                     />
-                    <TextField
+                    <ImageUploadField
                       label="Hero image URL"
+                      folder="services"
                       value={draft.heroImage}
-                      onChange={(event) =>
-                        setDraft((current) => ({ ...current, heroImage: event.target.value }))
-                      }
-                      fullWidth
+                      onChange={(value) => setDraft((current) => ({ ...current, heroImage: value }))}
+                      previewAlt={draft.name || "Service image"}
+                      helperText="Upload a service image or paste a URL. This image will appear on the service card and page."
                     />
                     <TextField
                       label="Details"
@@ -168,9 +236,16 @@ export default function AdminServicesPage() {
                       fullWidth
                     />
 
-                    <Button variant="contained" onClick={addService} startIcon={<SaveRoundedIcon />}>
-                      Add Service
-                    </Button>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                      <Button variant="contained" onClick={saveService} startIcon={<SaveRoundedIcon />}>
+                        {editingSlug ? "Save Changes" : "Add Service"}
+                      </Button>
+                      {editingSlug ? (
+                        <Button variant="outlined" onClick={resetDraft}>
+                          Cancel Edit
+                        </Button>
+                      ) : null}
+                    </Stack>
                   </Stack>
                 </CardContent>
               </Card>
@@ -199,31 +274,47 @@ export default function AdminServicesPage() {
                     <Chip label="No custom services yet" variant="outlined" />
                   ) : (
                     services.map((service) => (
-                      <Paper
+                      <ButtonBase
                         key={service.slug}
-                        elevation={0}
-                        sx={{
-                          p: 1.5,
-                          borderRadius: 2,
-                          border: "1px solid rgba(16,42,67,0.08)"
-                        }}
+                        onClick={() => loadServiceIntoForm(service)}
+                        sx={{ width: "100%", borderRadius: 2, textAlign: "left" }}
                       >
-                        <Stack direction="row" justifyContent="space-between" spacing={2}>
-                          <Box sx={{ minWidth: 0 }}>
-                            <Typography sx={{ fontWeight: 700 }}>{service.name}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {service.slug}
-                            </Typography>
-                          </Box>
-                          <IconButton
-                            aria-label={`Remove ${service.name}`}
-                            onClick={() => removeService(service.slug)}
-                            size="small"
-                          >
-                            <DeleteOutlineRoundedIcon fontSize="small" />
-                          </IconButton>
-                        </Stack>
-                      </Paper>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            width: "100%",
+                            p: 1.5,
+                            borderRadius: 2,
+                            border:
+                              editingSlug === service.slug
+                                ? "1px solid rgba(31,157,148,0.35)"
+                                : "1px solid rgba(16,42,67,0.08)",
+                            bgcolor:
+                              editingSlug === service.slug
+                                ? "rgba(31,157,148,0.06)"
+                                : "#ffffff"
+                          }}
+                        >
+                          <Stack direction="row" justifyContent="space-between" spacing={2}>
+                            <Box sx={{ minWidth: 0 }}>
+                              <Typography sx={{ fontWeight: 700 }}>{service.name}</Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {service.slug}
+                              </Typography>
+                            </Box>
+                            <IconButton
+                              aria-label={`Remove ${service.name}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                removeService(service.slug);
+                              }}
+                              size="small"
+                            >
+                              <DeleteOutlineRoundedIcon fontSize="small" />
+                            </IconButton>
+                          </Stack>
+                        </Paper>
+                      </ButtonBase>
                     ))
                   )}
                 </Stack>

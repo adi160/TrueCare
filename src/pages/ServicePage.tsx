@@ -43,7 +43,15 @@ export default function ServicePage() {
         component="img"
         src={service.heroImage}
         alt={service.name}
-        sx={{ width: "100%", borderRadius: 4, maxHeight: 480, objectFit: "cover", mb: 5 }}
+        sx={{
+          width: "100%",
+          height: { xs: 280, md: 480 },
+          borderRadius: 4,
+          objectFit: "cover",
+          objectPosition: "center",
+          display: "block",
+          mb: 5
+        }}
       />
 
       <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap" sx={{ mb: 5 }}>

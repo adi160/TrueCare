@@ -18,6 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { GalleryItem } from "../../data/gallery";
+import ImageUploadField from "../../components/admin/ImageUploadField";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 
 const storageKey = "truecare-extra-gallery-items";
@@ -126,21 +127,25 @@ export default function AdminGalleryPage() {
                       multiline
                       minRows={3}
                     />
-                    <TextField
+                    <ImageUploadField
                       label="Before image URL"
+                      folder="gallery/before"
                       value={draft.beforeImage}
-                      onChange={(event) =>
-                        setDraft((current) => ({ ...current, beforeImage: event.target.value }))
+                      onChange={(value) =>
+                        setDraft((current) => ({ ...current, beforeImage: value }))
                       }
-                      fullWidth
+                      previewAlt={`${draft.title || "Gallery"} before`}
+                      helperText="Upload the before image or paste its URL."
                     />
-                    <TextField
+                    <ImageUploadField
                       label="After image URL"
+                      folder="gallery/after"
                       value={draft.afterImage}
-                      onChange={(event) =>
-                        setDraft((current) => ({ ...current, afterImage: event.target.value }))
+                      onChange={(value) =>
+                        setDraft((current) => ({ ...current, afterImage: value }))
                       }
-                      fullWidth
+                      previewAlt={`${draft.title || "Gallery"} after`}
+                      helperText="Upload the after image or paste its URL."
                     />
 
                     <Button variant="contained" onClick={addGalleryItem} startIcon={<SaveRoundedIcon />}>

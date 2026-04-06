@@ -40,6 +40,7 @@ export default function DoctorSection({ onViewProfile }: DoctorSectionProps) {
                   width: "100%",
                   height: { xs: 280, md: 420 },
                   objectFit: "cover",
+                  objectPosition: "center",
                   borderRadius: 5
                 }}
               />
