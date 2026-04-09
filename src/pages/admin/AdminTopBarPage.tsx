@@ -22,6 +22,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultContactSettings, defaultTopBarSettings, getContactSettings, getTopBarSettings } from "../../data/siteContent";
 import type { ContactSectionSettings, SiteTopBarSettings } from "../../data/siteContent";
+import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import {
   validatePhone,
@@ -32,6 +33,7 @@ const topBarStorageKey = "truecare-site-topbar";
 const contactStorageKey = "truecare-site-contact";
 
 export default function AdminTopBarPage() {
+  useAdminScrollTop();
   const [topBarDraft, setTopBarDraft] = useState<SiteTopBarSettings>(getTopBarSettings());
   const [contactDraft, setContactDraft] = useState<ContactSectionSettings>(getContactSettings());
   const [savedAt, setSavedAt] = useState<string | null>(null);

@@ -25,6 +25,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Service } from "../../types/clinic";
 import ImageUploadField from "../../components/admin/ImageUploadField";
+import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import {
   validateMinimumLines,
@@ -43,6 +44,7 @@ function createServiceSlug(name: string): string {
 }
 
 export default function AdminServicesPage() {
+  useAdminScrollTop();
   const [services, setServices] = useState<Service[]>([]);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);

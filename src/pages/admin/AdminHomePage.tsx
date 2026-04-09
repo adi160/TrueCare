@@ -26,6 +26,7 @@ import {
   type HomeSectionSettings
 } from "../../data/siteContent";
 import ImageUploadField from "../../components/admin/ImageUploadField";
+import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import {
   validateMinimumLines,
@@ -36,6 +37,7 @@ import {
 const storageKey = "truecare-site-home";
 
 export default function AdminHomePage() {
+  useAdminScrollTop();
   const [draft, setDraft] = useState<HomeSectionSettings>(getHomeSectionSettings());
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);

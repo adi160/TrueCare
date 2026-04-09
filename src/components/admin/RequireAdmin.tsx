@@ -3,10 +3,11 @@ import { Box, Button, Card, CardContent, Container, Stack, Typography } from "@m
 import { Navigate, Outlet, useLocation, Link as RouterLink } from "react-router-dom";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import { hasSupabaseConfig } from "../../lib/supabaseClient";
+import { canAccessAdminPath } from "../../utils/adminPermissions";
 
 export default function RequireAdmin() {
   const location = useLocation();
-  const { loading, session, isAdmin, signOut } = useAdminAuth();
+  const { loading, session, profile, signOut } = useAdminAuth();
 
   if (!hasSupabaseConfig()) {
     return (
@@ -42,7 +43,7 @@ export default function RequireAdmin() {
     return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
   }
 
-  if (!isAdmin) {
+  if (!profile || !canAccessAdminPath(profile.role, location.pathname)) {
     return (
       <Container sx={{ py: 8 }}>
         <Card sx={{ maxWidth: 720, mx: "auto", borderRadius: 3 }}>
@@ -51,7 +52,8 @@ export default function RequireAdmin() {
               <LockRoundedIcon color="error" />
               <Typography variant="h4">Admin access not approved</Typography>
               <Typography color="text.secondary">
-                This account is signed in, but it is not listed as an admin in Supabase.
+                This account is signed in, but it does not have permission to open this admin
+                area.
               </Typography>
               <Stack direction="row" spacing={1.5}>
                 <Button component={RouterLink} to="/admin/login" variant="contained">

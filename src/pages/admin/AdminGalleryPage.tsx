@@ -24,6 +24,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { GalleryItem } from "../../data/gallery";
 import ImageUploadField from "../../components/admin/ImageUploadField";
+import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import {
   validateRequiredText,
@@ -33,6 +34,7 @@ import {
 const storageKey = "truecare-extra-gallery-items";
 
 export default function AdminGalleryPage() {
+  useAdminScrollTop();
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<GalleryItem | null>(null);

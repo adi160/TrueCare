@@ -1,10 +1,15 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { getSupabaseClient, hasSupabaseConfig } from "../lib/supabaseClient";
+import {
+  getAdminPermissions,
+  isApprovedAdminRole,
+  type AdminPermissions
+} from "../utils/adminPermissions";
 
 export interface AdminProfile {
   id: string;
-  role: string;
+  role: "admin" | "manager";
   fullName: string | null;
 }
 
@@ -14,6 +19,7 @@ interface AdminAuthContextValue {
   user: User | null;
   profile: AdminProfile | null;
   isAdmin: boolean;
+  permissions: AdminPermissions;
   configReady: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   signOut: () => Promise<void>;
@@ -35,13 +41,13 @@ async function loadAdminProfile(userId: string): Promise<AdminProfile | null> {
     .eq("id", userId)
     .maybeSingle();
 
-  if (error || !data) {
+  if (error || !data || !isApprovedAdminRole(data.role)) {
     return null;
   }
 
   return {
     id: data.id,
-    role: data.role,
+    role: data.role === "admin" ? "admin" : "manager",
     fullName: data.full_name ?? null
   };
 }
@@ -52,6 +58,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<AdminProfile | null>(null);
+  const permissions = useMemo(() => getAdminPermissions(profile?.role), [profile?.role]);
 
   async function syncSession(nextSession: Session | null): Promise<void> {
     setSession(nextSession);
@@ -160,13 +167,14 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       session,
       user: session?.user ?? null,
       profile,
-      isAdmin: Boolean(profile && profile.role === "admin"),
+      isAdmin: Boolean(profile),
+      permissions,
       configReady,
       signIn,
       signOut,
       refresh
     }),
-    [configReady, loading, profile, refresh, session]
+    [configReady, loading, permissions, profile, refresh, session]
   );
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;

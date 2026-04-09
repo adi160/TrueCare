@@ -25,6 +25,7 @@ import {
   getAppointmentSettings,
   type AppointmentSectionSettings
 } from "../../data/siteContent";
+import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import {
   validateMinimumLines,
@@ -34,6 +35,7 @@ import {
 const storageKey = "truecare-site-appointment";
 
 export default function AdminAppointmentPage() {
+  useAdminScrollTop();
   const [draft, setDraft] = useState<AppointmentSectionSettings>(getAppointmentSettings());
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);

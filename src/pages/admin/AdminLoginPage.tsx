@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useLocation, useNavigate, Link as RouterLink } from "react-router-dom";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import { hasSupabaseConfig } from "../../lib/supabaseClient";
+import { canAccessAdminPath, getAdminLandingRoute } from "../../utils/adminPermissions";
 
 type LoginState = {
   from?: string;
@@ -12,7 +13,7 @@ type LoginState = {
 export default function AdminLoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { session, isAdmin, signIn, loading, configReady } = useAdminAuth();
+  const { session, profile, signIn, loading, configReady } = useAdminAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -21,10 +22,11 @@ export default function AdminLoginPage() {
   const from = (location.state as LoginState | null)?.from ?? "/admin";
 
   useEffect(() => {
-    if (session && isAdmin) {
-      navigate(from, { replace: true });
+    if (session && profile) {
+      const nextRoute = canAccessAdminPath(profile.role, from) ? from : getAdminLandingRoute(profile.role);
+      navigate(nextRoute, { replace: true });
     }
-  }, [from, isAdmin, navigate, session]);
+  }, [from, navigate, profile, session]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,12 +36,9 @@ export default function AdminLoginPage() {
     const result = await signIn(email, password);
     setSubmitting(false);
 
-    if (result.success) {
-      navigate(from, { replace: true });
-      return;
+    if (!result.success) {
+      setMessage(result.message);
     }
-
-    setMessage(result.message);
   }
 
   if (!hasSupabaseConfig() || !configReady) {

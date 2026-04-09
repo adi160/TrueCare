@@ -22,6 +22,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultDoctorProfile, getDoctorProfile } from "../../data/siteContent";
 import ImageUploadField from "../../components/admin/ImageUploadField";
+import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import {
   validateMinimumLines,
@@ -32,6 +33,7 @@ import {
 const storageKey = "truecare-site-doctor";
 
 export default function AdminDoctorPage() {
+  useAdminScrollTop();
   const [draft, setDraft] = useState(getDoctorProfile());
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);

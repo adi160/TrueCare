@@ -21,6 +21,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultStorySettings, getStorySettings, type SiteStorySettings } from "../../data/siteContent";
+import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import {
   validateMinimumLines,
@@ -30,6 +31,7 @@ import {
 const storageKey = "truecare-site-story";
 
 export default function AdminAboutPage() {
+  useAdminScrollTop();
   const [draft, setDraft] = useState<SiteStorySettings>(getStorySettings());
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);

@@ -25,6 +25,7 @@ import {
   getFooterSettings,
   type FooterSectionSettings
 } from "../../data/siteContent";
+import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import { validateRequiredText, validateUrl } from "../../utils/adminValidation";
 
@@ -39,6 +40,7 @@ function normalizeFooterDraft(value: FooterSectionSettings): FooterSectionSettin
 }
 
 export default function AdminFooterPage() {
+  useAdminScrollTop();
   const [draft, setDraft] = useState<FooterSectionSettings>(
     normalizeFooterDraft(getFooterSettings())
   );

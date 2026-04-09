@@ -23,6 +23,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultPatientTestimonials, getPatientTestimonials } from "../../data/siteContent";
+import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import { validateRequiredText } from "../../utils/adminValidation";
 
@@ -35,6 +36,7 @@ type TestimonialDraft = {
 };
 
 export default function AdminTestimonialsPage() {
+  useAdminScrollTop();
   const [items, setItems] = useState(getPatientTestimonials());
   const [draft, setDraft] = useState<TestimonialDraft>({
     name: "",

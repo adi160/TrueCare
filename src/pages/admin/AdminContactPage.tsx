@@ -21,6 +21,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultContactSettings, getContactSettings, type ContactSectionSettings } from "../../data/siteContent";
+import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import {
   validateEmail,
@@ -30,6 +31,7 @@ import {
 const storageKey = "truecare-site-contact";
 
 export default function AdminContactPage() {
+  useAdminScrollTop();
   const [draft, setDraft] = useState<ContactSectionSettings>(getContactSettings());
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);

@@ -25,12 +25,14 @@ import {
   getSiteHeaderSettings,
   type SiteHeaderSettings
 } from "../../data/siteContent";
+import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import { validateRequiredText } from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-header";
 
 export default function AdminHeaderPage() {
+  useAdminScrollTop();
   const [draft, setDraft] = useState<SiteHeaderSettings>(getSiteHeaderSettings());
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);

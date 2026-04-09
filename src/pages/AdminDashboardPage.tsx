@@ -37,6 +37,7 @@ import {
 } from "../data/adminDashboard";
 import { useAdminAuth } from "../context/AdminAuthContext";
 import { loadDashboardPeriodData, type LiveDashboardData } from "../services/backend";
+import { getRoleDisplayLabel } from "../utils/adminPermissions";
 
 const periodOrder: DashboardPeriodKey[] = ["daily", "weekly", "monthly"];
 
@@ -211,12 +212,17 @@ export default function AdminDashboardPage() {
   const [period, setPeriod] = useState<DashboardPeriodKey>("weekly");
   const [isSyncing, setIsSyncing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const { user, profile, signOut } = useAdminAuth();
+  const { user, profile, permissions, signOut } = useAdminAuth();
   const logoutLabel = `${profile?.fullName ?? user?.email ?? "Admin"} Sign Out`;
+  const roleLabel = getRoleDisplayLabel(profile?.role);
   const [data, setData] = useState<LiveDashboardData>({
     ...dashboardPeriods[period],
     live: false
   });
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
 
   async function refreshDashboardData(): Promise<void> {
     setIsSyncing(true);
@@ -596,9 +602,17 @@ export default function AdminDashboardPage() {
             >
               Back to Site
             </Button>
-            <Button variant="text" onClick={() => void signOut()} sx={{ minWidth: 0, px: 0.5 }}>
-              {logoutLabel}
-            </Button>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip
+                label={`Role: ${roleLabel}`}
+                size="small"
+                variant="outlined"
+                sx={{ borderColor: "rgba(31,157,148,0.24)", color: "primary.main" }}
+              />
+              <Button variant="text" onClick={() => void signOut()} sx={{ minWidth: 0, px: 0.5 }}>
+                {logoutLabel}
+              </Button>
+            </Stack>
           </Stack>
 
           <Stack
@@ -711,37 +725,39 @@ export default function AdminDashboardPage() {
               helper={`${data.visitorToBookingRate.toFixed(2)}% visitor-to-booking`}
             />
           </Grid>
-          <Grid size={{ xs: 12, lg: 12 }}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2.5,
-                borderRadius: 3,
-                border: "1px solid rgba(31,157,148,0.12)",
-                background: "linear-gradient(180deg, #f6fffe 0%, #effcf9 100%)",
-                boxShadow: "0 18px 48px rgba(16,42,67,0.06)"
-              }}
-            >
-              <Stack
-                direction={{ xs: "column", md: "row" }}
-                justifyContent="space-between"
-                alignItems={{ xs: "flex-start", md: "center" }}
-                spacing={2}
+          {permissions.leads ? (
+            <Grid size={{ xs: 12, lg: 12 }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  borderRadius: 3,
+                  border: "1px solid rgba(31,157,148,0.12)",
+                  background: "linear-gradient(180deg, #f6fffe 0%, #effcf9 100%)",
+                  boxShadow: "0 18px 48px rgba(16,42,67,0.06)"
+                }}
               >
-                <Box>
-                  <Typography variant="h5" sx={{ mb: 0.75 }}>
-                    Consultation Leads
-                  </Typography>
-                  <Typography color="text.secondary">
-                    Review booking enquiries and update their pipeline status from the lead board.
-                  </Typography>
-                </Box>
-                <Button component={Link} to="/admin/leads" variant="contained">
-                  Open Leads Board
-                </Button>
-              </Stack>
-            </Paper>
-          </Grid>
+                <Stack
+                  direction={{ xs: "column", md: "row" }}
+                  justifyContent="space-between"
+                  alignItems={{ xs: "flex-start", md: "center" }}
+                  spacing={2}
+                >
+                  <Box>
+                    <Typography variant="h5" sx={{ mb: 0.75 }}>
+                      Consultation Leads
+                    </Typography>
+                    <Typography color="text.secondary">
+                      Review booking enquiries and update their pipeline status from the lead board.
+                    </Typography>
+                  </Box>
+                  <Button component={Link} to="/admin/leads" variant="contained">
+                    Open Leads Board
+                  </Button>
+                </Stack>
+              </Paper>
+            </Grid>
+          ) : null}
         </Grid>
 
         <Grid container spacing={3}>
@@ -1045,94 +1061,115 @@ export default function AdminDashboardPage() {
                 </Stack>
 
                 <Grid container spacing={2.5}>
-                  <Grid size={{ xs: 12, md: 4 }}>
-                    <ContentLinkCard
-                      title="Above Header"
-                      description="Edit the thin top strip's details shown above the header."
-                      to="/admin/above-header"
-                      accent="warning"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 4 }}>
-                    <ContentLinkCard
-                      title="Header"
-                      description="Edit the clinic name and subtitle shown in the main header."
-                      to="/admin/header"
-                      accent="secondary"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 4 }}>
-                    <ContentLinkCard
-                      title="Home Section"
-                      description="Edit the hero copy, hero image, and bullet points used on the home page."
-                      to="/admin/home"
-                      accent="primary"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 4 }}>
-                    <ContentLinkCard
-                      title="Services Library"
-                      description="Add new services with images, descriptions, and detail copy for the site."
-                      to="/admin/services"
-                      accent="secondary"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 4 }}>
-                    <ContentLinkCard
-                      title="Gallery Library"
-                      description="Add before and after treatment cards with image pairs for the gallery."
-                      to="/admin/gallery"
-                      accent="warning"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 4 }}>
-                    <ContentLinkCard
-                      title="Testimonials"
-                      description="Manage patient quotes and review cards in the testimonials section."
-                      to="/admin/testimonials"
-                      accent="primary"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 4 }}>
-                    <ContentLinkCard
-                      title="Appointment Block"
-                      description="Edit the consultation callout, bullets, and quote before the booking form."
-                      to="/admin/appointment"
-                      accent="warning"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 4 }}>
-                    <ContentLinkCard
-                      title="Contact Info"
-                      description="Edit the phone, WhatsApp, and email used in the top strip and floating buttons."
-                      to="/admin/contact"
-                      accent="primary"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 4 }}>
-                    <ContentLinkCard
-                      title="About Section"
-                      description="Update the welcome text, highlights, and clinic stats that introduce the brand."
-                      to="/admin/about"
-                      accent="warning"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 4 }}>
-                    <ContentLinkCard
-                      title="Doctor Profile"
-                      description="Edit the doctor bio, image, qualifications, and expertise sections."
-                      to="/admin/doctor"
-                      accent="secondary"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 4 }}>
-                    <ContentLinkCard
-                      title="Footer"
-                      description="Update the footer address and support copy shown across the site."
-                      to="/admin/footer"
-                      accent="secondary"
-                    />
-                  </Grid>
+                  {permissions.content ? (
+                    <>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <ContentLinkCard
+                          title="Above Header"
+                          description="Edit the thin top strip's details shown above the header."
+                          to="/admin/above-header"
+                          accent="warning"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <ContentLinkCard
+                          title="Header"
+                          description="Edit the clinic name and subtitle shown in the main header."
+                          to="/admin/header"
+                          accent="secondary"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <ContentLinkCard
+                          title="Home Section"
+                          description="Edit the hero copy, hero image, and bullet points used on the home page."
+                          to="/admin/home"
+                          accent="primary"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <ContentLinkCard
+                          title="Services Library"
+                          description="Add new services with images, descriptions, and detail copy for the site."
+                          to="/admin/services"
+                          accent="secondary"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <ContentLinkCard
+                          title="Gallery Library"
+                          description="Add before and after treatment cards with image pairs for the gallery."
+                          to="/admin/gallery"
+                          accent="warning"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <ContentLinkCard
+                          title="Testimonials"
+                          description="Manage patient quotes and review cards in the testimonials section."
+                          to="/admin/testimonials"
+                          accent="primary"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <ContentLinkCard
+                          title="Appointment Block"
+                          description="Edit the consultation callout, bullets, and quote before the booking form."
+                          to="/admin/appointment"
+                          accent="warning"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <ContentLinkCard
+                          title="Contact Info"
+                          description="Edit the phone, WhatsApp, and email used in the top strip and floating buttons."
+                          to="/admin/contact"
+                          accent="primary"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <ContentLinkCard
+                          title="About Section"
+                          description="Update the welcome text, highlights, and clinic stats that introduce the brand."
+                          to="/admin/about"
+                          accent="warning"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <ContentLinkCard
+                          title="Doctor Profile"
+                          description="Edit the doctor bio, image, qualifications, and expertise sections."
+                          to="/admin/doctor"
+                          accent="secondary"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 4 }}>
+                        <ContentLinkCard
+                          title="Footer"
+                          description="Update the footer address and support copy shown across the site."
+                          to="/admin/footer"
+                          accent="secondary"
+                        />
+                      </Grid>
+                    </>
+                  ) : (
+                    <Grid size={{ xs: 12 }}>
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          p: 2.5,
+                          borderRadius: 2.5,
+                          border: "1px solid rgba(16,42,67,0.08)",
+                          background: "#fff"
+                        }}
+                      >
+                        <Typography sx={{ fontWeight: 700, mb: 0.5 }}>Content access restricted</Typography>
+                        <Typography color="text.secondary">
+                          This role can review leads but does not have content editing access.
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  )}
                 </Grid>
               </CardContent>
             </Card>

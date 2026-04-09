@@ -274,6 +274,33 @@ export async function updateConsultationLeadStatus(
   };
 }
 
+export async function bulkUpdateConsultationLeadStatuses(
+  referenceIds: string[],
+  nextStatus: ConsultationLeadRecord["status"]
+): Promise<{ success: boolean; message: string; updatedCount: number }> {
+  let updatedCount = 0;
+
+  for (const referenceId of referenceIds) {
+    const result = await updateConsultationLeadStatus(referenceId, nextStatus);
+
+    if (!result.success) {
+      return {
+        success: false,
+        message: result.message,
+        updatedCount
+      };
+    }
+
+    updatedCount += 1;
+  }
+
+  return {
+    success: true,
+    message: `Updated ${updatedCount} lead${updatedCount === 1 ? "" : "s"}.`,
+    updatedCount
+  };
+}
+
 export async function loadDashboardPeriodData(
   period: DashboardPeriodKey
 ): Promise<LiveDashboardData> {
