@@ -2,12 +2,17 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
   Chip,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   IconButton,
   Paper,
@@ -20,11 +25,17 @@ import { Link } from "react-router-dom";
 import type { GalleryItem } from "../../data/gallery";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import {
+  validateRequiredText,
+  validateUrl
+} from "../../utils/adminValidation";
 
 const storageKey = "truecare-extra-gallery-items";
 
 export default function AdminGalleryPage() {
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<GalleryItem | null>(null);
   const [draft, setDraft] = useState({
     title: "",
     treatment: "",
@@ -53,10 +64,20 @@ export default function AdminGalleryPage() {
       afterImage: draft.afterImage.trim()
     };
 
-    if (!nextItem.title || !nextItem.beforeImage || !nextItem.afterImage) {
+    const validations = [
+      validateRequiredText(nextItem.title, "Card title"),
+      validateRequiredText(nextItem.treatment, "Treatment name"),
+      validateRequiredText(nextItem.description, "Description"),
+      validateUrl(nextItem.beforeImage, "Before image URL"),
+      validateUrl(nextItem.afterImage, "After image URL")
+    ].filter(Boolean) as string[];
+
+    if (validations.length > 0) {
+      setSaveError(validations[0]);
       return;
     }
 
+    setSaveError(null);
     void persist([...galleryItems, nextItem]);
     setDraft({
       title: "",
@@ -69,6 +90,7 @@ export default function AdminGalleryPage() {
 
   const removeGalleryItem = (title: string) => {
     void persist(galleryItems.filter((item) => item.title !== title));
+    setDeleteTarget(null);
   };
 
   return (
@@ -151,6 +173,7 @@ export default function AdminGalleryPage() {
                     <Button variant="contained" onClick={addGalleryItem} startIcon={<SaveRoundedIcon />}>
                       Add Gallery Item
                     </Button>
+                    {saveError ? <Alert severity="error">{saveError}</Alert> : null}
                   </Stack>
                 </CardContent>
               </Card>
@@ -197,7 +220,7 @@ export default function AdminGalleryPage() {
                           </Box>
                           <IconButton
                             aria-label={`Remove ${item.title}`}
-                            onClick={() => removeGalleryItem(item.title)}
+                            onClick={() => setDeleteTarget(item)}
                             size="small"
                           >
                             <DeleteOutlineRoundedIcon fontSize="small" />
@@ -210,6 +233,27 @@ export default function AdminGalleryPage() {
               </Paper>
             </Grid>
           </Grid>
+
+          <Dialog open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)}>
+            <DialogTitle>Delete gallery item?</DialogTitle>
+            <DialogContent>
+              This will remove <strong>{deleteTarget?.title}</strong> from the saved gallery items.
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
+              <Button
+                color="error"
+                variant="contained"
+                onClick={() => {
+                  if (deleteTarget) {
+                    removeGalleryItem(deleteTarget.title);
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Stack>
       </Container>
     </Box>

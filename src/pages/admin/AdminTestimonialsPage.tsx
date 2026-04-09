@@ -2,12 +2,17 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
   Chip,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   IconButton,
   Paper,
@@ -19,6 +24,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultPatientTestimonials, getPatientTestimonials } from "../../data/siteContent";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import { validateRequiredText } from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-testimonials";
 
@@ -36,6 +42,11 @@ export default function AdminTestimonialsPage() {
     quote: ""
   });
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<(typeof defaultPatientTestimonials)[number] | null>(
+    null
+  );
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     void hydrateSectionValue(storageKey, defaultPatientTestimonials, storageKey).then((value) => {
@@ -49,10 +60,18 @@ export default function AdminTestimonialsPage() {
   };
 
   const addItem = () => {
-    if (!draft.name.trim() || !draft.treatment.trim() || !draft.quote.trim()) {
+    const validations = [
+      validateRequiredText(draft.name, "Patient name"),
+      validateRequiredText(draft.treatment, "Treatment"),
+      validateRequiredText(draft.quote, "Quote")
+    ].filter(Boolean) as string[];
+
+    if (validations.length > 0) {
+      setSaveError(validations[0]);
       return;
     }
 
+    setSaveError(null);
     void persist([...items, { ...draft }]);
     setDraft({ name: "", treatment: "", quote: "" });
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
@@ -60,11 +79,14 @@ export default function AdminTestimonialsPage() {
 
   const removeItem = (name: string) => {
     void persist(items.filter((item) => item.name !== name));
+    setDeleteTarget(null);
   };
 
   const resetItems = () => {
     void persist(defaultPatientTestimonials);
     setSavedAt(null);
+    setSaveError(null);
+    setResetOpen(false);
   };
 
   return (
@@ -72,27 +94,28 @@ export default function AdminTestimonialsPage() {
       sx={{
         minHeight: "100vh",
         py: { xs: 3, md: 5 },
-        background: "linear-gradient(180deg, #123c3a 0%, #0c2928 100%)"
+        background:
+          "radial-gradient(circle at top left, rgba(31,157,148,0.12), transparent 28%), linear-gradient(180deg, #f4fbfb 0%, #ecf6f4 100%)"
       }}
     >
       <Container>
         <Stack spacing={3}>
-          <Button component={Link} to="/admin" variant="text" startIcon={<ArrowBackRoundedIcon />} sx={{ color: "white" }}>
+          <Button component={Link} to="/admin" variant="text" startIcon={<ArrowBackRoundedIcon />}>
             Back to Admin
           </Button>
 
           <Box>
-            <Typography variant="h2" sx={{ mb: 1, color: "white" }}>
+            <Typography variant="h2" sx={{ mb: 1 }}>
               Testimonials Editor
             </Typography>
-            <Typography sx={{ maxWidth: 760, color: "rgba(255,255,255,0.72)" }}>
+            <Typography color="text.secondary" sx={{ maxWidth: 760 }}>
               Manage the patient review cards shown in the testimonials section.
             </Typography>
           </Box>
 
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, lg: 7 }}>
-              <Card sx={{ borderRadius: 3, border: "1px solid rgba(255,255,255,0.14)" }}>
+              <Card sx={{ borderRadius: 3, border: "1px solid rgba(16,42,67,0.08)" }}>
                 <CardContent sx={{ p: 3 }}>
                   <Stack spacing={2}>
                     <TextField
@@ -125,13 +148,14 @@ export default function AdminTestimonialsPage() {
                     <Button variant="contained" onClick={addItem} startIcon={<SaveRoundedIcon />}>
                       Add Testimonial
                     </Button>
+                    {saveError ? <Alert severity="error">{saveError}</Alert> : null}
                   </Stack>
                 </CardContent>
               </Card>
             </Grid>
 
             <Grid size={{ xs: 12, lg: 5 }}>
-              <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: "#ffffff", border: "1px solid rgba(255,255,255,0.14)" }}>
+              <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: "#ffffff", border: "1px solid rgba(31,157,148,0.12)" }}>
                 <Typography variant="h5" sx={{ mb: 1 }}>
                   Saved Testimonials
                 </Typography>
@@ -149,7 +173,7 @@ export default function AdminTestimonialsPage() {
                             {item.treatment}
                           </Typography>
                         </Box>
-                        <IconButton aria-label={`Remove ${item.name}`} onClick={() => removeItem(item.name)} size="small">
+                        <IconButton aria-label={`Remove ${item.name}`} onClick={() => setDeleteTarget(item)} size="small">
                           <DeleteOutlineRoundedIcon fontSize="small" />
                         </IconButton>
                       </Stack>
@@ -158,7 +182,7 @@ export default function AdminTestimonialsPage() {
                 </Stack>
 
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 3 }}>
-                  <Button variant="outlined" onClick={resetItems}>
+                  <Button variant="outlined" onClick={() => setResetOpen(true)}>
                     Reset Defaults
                   </Button>
                   {savedAt ? <Chip label={`Saved at ${savedAt}`} color="success" variant="outlined" /> : null}
@@ -166,6 +190,40 @@ export default function AdminTestimonialsPage() {
               </Paper>
             </Grid>
           </Grid>
+
+          <Dialog open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)}>
+            <DialogTitle>Delete testimonial?</DialogTitle>
+            <DialogContent>
+              This will remove <strong>{deleteTarget?.name}</strong> from the saved testimonials.
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
+              <Button
+                color="error"
+                variant="contained"
+                onClick={() => {
+                  if (deleteTarget) {
+                    removeItem(deleteTarget.name);
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <Dialog open={resetOpen} onClose={() => setResetOpen(false)}>
+            <DialogTitle>Reset testimonials?</DialogTitle>
+            <DialogContent>
+              This will restore the default testimonials and discard any custom entries.
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setResetOpen(false)}>Cancel</Button>
+              <Button color="warning" variant="contained" onClick={resetItems}>
+                Reset
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Stack>
       </Container>
     </Box>

@@ -1,10 +1,15 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Chip,
   Container,
   Grid,
@@ -21,6 +26,7 @@ import {
   type FooterSectionSettings
 } from "../../data/siteContent";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import { validateRequiredText, validateUrl } from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-footer";
 
@@ -37,6 +43,8 @@ export default function AdminFooterPage() {
     normalizeFooterDraft(getFooterSettings())
   );
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     void hydrateSectionValue(storageKey, defaultFooterSettings, storageKey).then((value) => {
@@ -46,6 +54,22 @@ export default function AdminFooterPage() {
 
   const saveFooter = async () => {
     const nextDraft = normalizeFooterDraft(draft);
+    const socialErrors = nextDraft.socialLinks
+      .map((item) => validateUrl(item.href, `${item.label} link`, true))
+      .filter(Boolean) as string[];
+    const validations = [
+      validateRequiredText(nextDraft.address, "Address"),
+      validateRequiredText(nextDraft.note, "Footer note"),
+      validateRequiredText(nextDraft.copyrightNote, "Copyright note"),
+      ...socialErrors
+    ].filter(Boolean) as string[];
+
+    if (validations.length > 0) {
+      setSaveError(validations[0]);
+      return;
+    }
+
+    setSaveError(null);
     await saveSectionValue(storageKey, nextDraft, storageKey);
     setDraft(nextDraft);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
@@ -55,6 +79,8 @@ export default function AdminFooterPage() {
     setDraft(defaultFooterSettings);
     await saveSectionValue(storageKey, defaultFooterSettings, storageKey);
     setSavedAt(null);
+    setSaveError(null);
+    setResetOpen(false);
   };
 
   return (
@@ -196,11 +222,12 @@ export default function AdminFooterPage() {
                       <Button variant="contained" onClick={saveFooter} startIcon={<SaveRoundedIcon />}>
                         Save Footer
                       </Button>
-                      <Button variant="outlined" onClick={resetFooter}>
+                      <Button variant="outlined" onClick={() => setResetOpen(true)}>
                         Reset to Defaults
                       </Button>
                     </Stack>
 
+                    {saveError ? <Alert severity="error">{saveError}</Alert> : null}
                     {savedAt ? <Chip label={`Saved at ${savedAt}`} color="success" variant="outlined" /> : null}
                   </Stack>
                 </CardContent>
@@ -243,6 +270,20 @@ export default function AdminFooterPage() {
           </Grid>
         </Stack>
       </Container>
+
+      <Dialog open={resetOpen} onClose={() => setResetOpen(false)}>
+        <DialogTitle>Reset footer?</DialogTitle>
+        <DialogContent>
+          This will restore the footer address, note, copyright text, and social links to the
+          default content.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetOpen(false)}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={() => void resetFooter()}>
+            Reset
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

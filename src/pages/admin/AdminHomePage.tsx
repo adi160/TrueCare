@@ -1,10 +1,15 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Chip,
   Container,
   Grid,
@@ -22,12 +27,19 @@ import {
 } from "../../data/siteContent";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import {
+  validateMinimumLines,
+  validateRequiredText,
+  validateUrl
+} from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-home";
 
 export default function AdminHomePage() {
   const [draft, setDraft] = useState<HomeSectionSettings>(getHomeSectionSettings());
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     void hydrateSectionValue(storageKey, defaultHomeSectionSettings, storageKey).then((value) => {
@@ -38,6 +50,22 @@ export default function AdminHomePage() {
   const bulletPointsText = useMemo(() => draft.bulletPoints.join("\n"), [draft.bulletPoints]);
 
   const saveHome = async () => {
+    const validations = [
+      validateRequiredText(draft.heroTitle, "Hero title"),
+      validateRequiredText(draft.heroTagline, "Hero tagline"),
+      validateUrl(draft.heroImage, "Hero image URL"),
+      validateRequiredText(draft.heroImageAlt, "Hero image alt text"),
+      validateRequiredText(draft.primaryCtaLabel, "Primary button label"),
+      validateRequiredText(draft.secondaryCtaLabel, "Secondary button label"),
+      validateMinimumLines(draft.bulletPoints, "Bullet points", 1)
+    ].filter(Boolean) as string[];
+
+    if (validations.length > 0) {
+      setSaveError(validations[0]);
+      return;
+    }
+
+    setSaveError(null);
     await saveSectionValue(storageKey, draft, storageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
@@ -46,6 +74,8 @@ export default function AdminHomePage() {
     setDraft(defaultHomeSectionSettings);
     await saveSectionValue(storageKey, defaultHomeSectionSettings, storageKey);
     setSavedAt(null);
+    setSaveError(null);
+    setResetOpen(false);
   };
 
   return (
@@ -158,11 +188,12 @@ export default function AdminHomePage() {
                       <Button variant="contained" onClick={saveHome} startIcon={<SaveRoundedIcon />}>
                         Save Home Section
                       </Button>
-                      <Button variant="outlined" onClick={resetHome}>
+                      <Button variant="outlined" onClick={() => setResetOpen(true)}>
                         Reset to Defaults
                       </Button>
                     </Stack>
 
+                    {saveError ? <Alert severity="error">{saveError}</Alert> : null}
                     {savedAt ? <Chip label={`Saved at ${savedAt}`} color="success" variant="outlined" /> : null}
                   </Stack>
                 </CardContent>
@@ -208,6 +239,19 @@ export default function AdminHomePage() {
           </Grid>
         </Stack>
       </Container>
+
+      <Dialog open={resetOpen} onClose={() => setResetOpen(false)}>
+        <DialogTitle>Reset home section?</DialogTitle>
+        <DialogContent>
+          This will restore the home hero, image, and bullet points to the default content.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetOpen(false)}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={() => void resetHome()}>
+            Reset
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

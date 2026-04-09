@@ -2,11 +2,16 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import {
+  Alert,
   Box,
   Button,
   ButtonBase,
   Card,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Chip,
   Container,
   Grid,
@@ -21,6 +26,11 @@ import { Link } from "react-router-dom";
 import type { Service } from "../../types/clinic";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import {
+  validateMinimumLines,
+  validateRequiredText,
+  validateUrl
+} from "../../utils/adminValidation";
 
 const storageKey = "truecare-extra-services";
 
@@ -35,6 +45,9 @@ function createServiceSlug(name: string): string {
 export default function AdminServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Service | null>(null);
   const [draft, setDraft] = useState({
     name: "",
     slug: "",
@@ -66,6 +79,8 @@ export default function AdminServicesPage() {
 
   const resetDraft = () => {
     setEditingSlug(null);
+    setSaveError(null);
+    setResetOpen(false);
     setDraft({
       name: "",
       slug: "",
@@ -89,6 +104,27 @@ export default function AdminServicesPage() {
   };
 
   const saveService = () => {
+    const validations = [
+      validateRequiredText(draft.name, "Service name"),
+      validateRequiredText(draft.slug || createServiceSlug(draft.name), "Slug"),
+      validateRequiredText(draft.shortDescription, "Short description"),
+      validateUrl(draft.heroImage, "Hero image URL"),
+      validateRequiredText(draft.details, "Details"),
+      validateMinimumLines(
+        draft.benefitsText
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
+        "Benefits",
+        1
+      )
+    ].filter(Boolean) as string[];
+
+    if (validations.length > 0) {
+      setSaveError(validations[0]);
+      return;
+    }
+
     const nextService: Service = {
       slug: draft.slug || createServiceSlug(draft.name),
       name: draft.name.trim(),
@@ -102,6 +138,7 @@ export default function AdminServicesPage() {
     };
 
     if (!nextService.name || !nextService.slug || !nextService.heroImage) {
+      setSaveError("Service name, slug, and hero image are required.");
       return;
     }
 
@@ -110,6 +147,7 @@ export default function AdminServicesPage() {
       nextService.shortDescription.split(/\s+/).filter(Boolean).length > 10 ||
       nextService.shortDescription.length > 110
     ) {
+      setSaveError("Short description must stay within 8-10 words and about 110 characters.");
       return;
     }
 
@@ -118,9 +156,11 @@ export default function AdminServicesPage() {
     );
 
     if (duplicate) {
+      setSaveError("Another service already uses that slug.");
       return;
     }
 
+    setSaveError(null);
     const nextServices = editingSlug
       ? services.map((service) => (service.slug === editingSlug ? nextService : service))
       : [...services, nextService];
@@ -134,6 +174,7 @@ export default function AdminServicesPage() {
     if (editingSlug === slug) {
       resetDraft();
     }
+    setDeleteTarget(null);
   };
 
   return (
@@ -241,11 +282,13 @@ export default function AdminServicesPage() {
                         {editingSlug ? "Save Changes" : "Add Service"}
                       </Button>
                       {editingSlug ? (
-                        <Button variant="outlined" onClick={resetDraft}>
+                        <Button variant="outlined" onClick={() => setResetOpen(true)}>
                           Cancel Edit
                         </Button>
                       ) : null}
                     </Stack>
+
+                    {saveError ? <Alert severity="error">{saveError}</Alert> : null}
                   </Stack>
                 </CardContent>
               </Card>
@@ -306,7 +349,7 @@ export default function AdminServicesPage() {
                               aria-label={`Remove ${service.name}`}
                               onClick={(event) => {
                                 event.stopPropagation();
-                                removeService(service.slug);
+                                setDeleteTarget(service);
                               }}
                               size="small"
                             >
@@ -323,6 +366,37 @@ export default function AdminServicesPage() {
           </Grid>
         </Stack>
       </Container>
+
+      <Dialog open={resetOpen} onClose={() => setResetOpen(false)}>
+        <DialogTitle>Cancel service edit?</DialogTitle>
+        <DialogContent>
+          This will clear the current form and stop editing the selected service.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetOpen(false)}>Keep Editing</Button>
+          <Button color="error" variant="contained" onClick={() => void resetDraft()}>
+            Cancel Edit
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)}>
+        <DialogTitle>Delete service?</DialogTitle>
+        <DialogContent>
+          This will permanently remove {deleteTarget?.name ?? "this service"} from the saved
+          services list.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteTarget(null)}>Keep Service</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => deleteTarget && removeService(deleteTarget.slug)}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

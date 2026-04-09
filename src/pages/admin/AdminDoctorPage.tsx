@@ -1,12 +1,17 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
   Chip,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   Paper,
   Stack,
@@ -18,12 +23,19 @@ import { Link } from "react-router-dom";
 import { defaultDoctorProfile, getDoctorProfile } from "../../data/siteContent";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import {
+  validateMinimumLines,
+  validateRequiredText,
+  validateUrl
+} from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-doctor";
 
 export default function AdminDoctorPage() {
   const [draft, setDraft] = useState(getDoctorProfile());
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     void hydrateSectionValue(storageKey, defaultDoctorProfile, storageKey).then((value) => {
@@ -36,6 +48,24 @@ export default function AdminDoctorPage() {
   const philosophyText = useMemo(() => draft.philosophy.join("\n"), [draft.philosophy]);
 
   const saveDoctor = async () => {
+    const validations = [
+      validateRequiredText(draft.doctorName, "Doctor name"),
+      validateRequiredText(draft.doctorBio, "Doctor bio"),
+      validateRequiredText(draft.title, "Profile title"),
+      validateRequiredText(draft.summary, "Summary"),
+      validateUrl(draft.image, "Profile image URL"),
+      validateRequiredText(draft.experience, "Experience"),
+      validateMinimumLines(draft.qualifications, "Qualifications", 1),
+      validateMinimumLines(draft.expertise, "Expertise", 1),
+      validateMinimumLines(draft.philosophy, "Philosophy", 1)
+    ].filter(Boolean) as string[];
+
+    if (validations.length > 0) {
+      setSaveError(validations[0]);
+      return;
+    }
+
+    setSaveError(null);
     await saveSectionValue(storageKey, draft, storageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
@@ -44,6 +74,8 @@ export default function AdminDoctorPage() {
     setDraft(defaultDoctorProfile);
     await saveSectionValue(storageKey, defaultDoctorProfile, storageKey);
     setSavedAt(null);
+    setSaveError(null);
+    setResetOpen(false);
   };
 
   return (
@@ -184,11 +216,12 @@ export default function AdminDoctorPage() {
                       <Button variant="contained" onClick={saveDoctor} startIcon={<SaveRoundedIcon />}>
                         Save Doctor
                       </Button>
-                      <Button variant="outlined" onClick={resetDoctor}>
+                      <Button variant="outlined" onClick={() => setResetOpen(true)}>
                         Reset to Defaults
                       </Button>
                     </Stack>
 
+                    {saveError ? <Alert severity="error">{saveError}</Alert> : null}
                     {savedAt ? <Chip label={`Saved at ${savedAt}`} color="success" variant="outlined" /> : null}
                   </Stack>
                 </CardContent>
@@ -211,6 +244,19 @@ export default function AdminDoctorPage() {
               </Paper>
             </Grid>
           </Grid>
+
+          <Dialog open={resetOpen} onClose={() => setResetOpen(false)}>
+            <DialogTitle>Reset doctor profile?</DialogTitle>
+            <DialogContent>
+              This will restore the default doctor profile and discard your current changes.
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setResetOpen(false)}>Cancel</Button>
+              <Button color="warning" variant="contained" onClick={resetDoctor}>
+                Reset
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Stack>
       </Container>
     </Box>

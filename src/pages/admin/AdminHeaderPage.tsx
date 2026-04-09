@@ -1,10 +1,15 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Chip,
   Container,
   Grid,
@@ -21,12 +26,15 @@ import {
   type SiteHeaderSettings
 } from "../../data/siteContent";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import { validateRequiredText } from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-header";
 
 export default function AdminHeaderPage() {
   const [draft, setDraft] = useState<SiteHeaderSettings>(getSiteHeaderSettings());
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     void hydrateSectionValue(storageKey, defaultHeaderSettings, storageKey).then((value) => {
@@ -35,6 +43,17 @@ export default function AdminHeaderPage() {
   }, []);
 
   const saveHeader = async () => {
+    const validations = [
+      validateRequiredText(draft.clinicName, "Clinic name"),
+      validateRequiredText(draft.tagline, "Subtitle")
+    ].filter(Boolean) as string[];
+
+    if (validations.length > 0) {
+      setSaveError(validations[0]);
+      return;
+    }
+
+    setSaveError(null);
     await saveSectionValue(storageKey, draft, storageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
@@ -43,6 +62,8 @@ export default function AdminHeaderPage() {
     setDraft(defaultHeaderSettings);
     await saveSectionValue(storageKey, defaultHeaderSettings, storageKey);
     setSavedAt(null);
+    setSaveError(null);
+    setResetOpen(false);
   };
 
   return (
@@ -98,11 +119,12 @@ export default function AdminHeaderPage() {
                       <Button variant="contained" onClick={saveHeader} startIcon={<SaveRoundedIcon />}>
                         Save Header
                       </Button>
-                      <Button variant="outlined" onClick={resetHeader}>
+                      <Button variant="outlined" onClick={() => setResetOpen(true)}>
                         Reset to Defaults
                       </Button>
                     </Stack>
 
+                    {saveError ? <Alert severity="error">{saveError}</Alert> : null}
                     {savedAt ? <Chip label={`Saved at ${savedAt}`} color="success" variant="outlined" /> : null}
                   </Stack>
                 </CardContent>
@@ -137,6 +159,19 @@ export default function AdminHeaderPage() {
           </Grid>
         </Stack>
       </Container>
+
+      <Dialog open={resetOpen} onClose={() => setResetOpen(false)}>
+        <DialogTitle>Reset header?</DialogTitle>
+        <DialogContent>
+          This will restore the clinic name and subtitle to the default content.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetOpen(false)}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={() => void resetHeader()}>
+            Reset
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

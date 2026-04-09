@@ -1,10 +1,15 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Chip,
   Container,
   Grid,
@@ -17,12 +22,18 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultStorySettings, getStorySettings, type SiteStorySettings } from "../../data/siteContent";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import {
+  validateMinimumLines,
+  validateRequiredText
+} from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-story";
 
 export default function AdminAboutPage() {
   const [draft, setDraft] = useState<SiteStorySettings>(getStorySettings());
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     void hydrateSectionValue(storageKey, defaultStorySettings, storageKey).then((value) => {
@@ -37,6 +48,24 @@ export default function AdminAboutPage() {
   );
 
   const saveAbout = async () => {
+    const validations = [
+      validateRequiredText(draft.eyebrow, "Eyebrow"),
+      validateRequiredText(draft.title, "Title"),
+      validateRequiredText(draft.description, "Description"),
+      validateMinimumLines(draft.highlights, "Highlights", 1),
+      validateMinimumLines(
+        draft.stats.map((stat) => `${stat.value}|${stat.label}`),
+        "Stats",
+        1
+      )
+    ].filter(Boolean) as string[];
+
+    if (validations.length > 0) {
+      setSaveError(validations[0]);
+      return;
+    }
+
+    setSaveError(null);
     await saveSectionValue(storageKey, draft, storageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
@@ -45,6 +74,8 @@ export default function AdminAboutPage() {
     setDraft(defaultStorySettings);
     await saveSectionValue(storageKey, defaultStorySettings, storageKey);
     setSavedAt(null);
+    setSaveError(null);
+    setResetOpen(false);
   };
 
   return (
@@ -145,11 +176,12 @@ export default function AdminAboutPage() {
                       <Button variant="contained" onClick={saveAbout} startIcon={<SaveRoundedIcon />}>
                         Save About
                       </Button>
-                      <Button variant="outlined" onClick={resetAbout}>
+                      <Button variant="outlined" onClick={() => setResetOpen(true)}>
                         Reset to Defaults
                       </Button>
                     </Stack>
 
+                    {saveError ? <Alert severity="error">{saveError}</Alert> : null}
                     {savedAt ? <Chip label={`Saved at ${savedAt}`} color="success" variant="outlined" /> : null}
                   </Stack>
                 </CardContent>
@@ -185,6 +217,19 @@ export default function AdminAboutPage() {
           </Grid>
         </Stack>
       </Container>
+
+      <Dialog open={resetOpen} onClose={() => setResetOpen(false)}>
+        <DialogTitle>Reset about section?</DialogTitle>
+        <DialogContent>
+          This will restore the about copy, highlights, and stats to the default content.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetOpen(false)}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={() => void resetAbout()}>
+            Reset
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

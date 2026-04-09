@@ -1,10 +1,15 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Chip,
   Container,
   Grid,
@@ -18,6 +23,10 @@ import { Link } from "react-router-dom";
 import { defaultContactSettings, defaultTopBarSettings, getContactSettings, getTopBarSettings } from "../../data/siteContent";
 import type { ContactSectionSettings, SiteTopBarSettings } from "../../data/siteContent";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import {
+  validatePhone,
+  validateRequiredText
+} from "../../utils/adminValidation";
 
 const topBarStorageKey = "truecare-site-topbar";
 const contactStorageKey = "truecare-site-contact";
@@ -26,6 +35,8 @@ export default function AdminTopBarPage() {
   const [topBarDraft, setTopBarDraft] = useState<SiteTopBarSettings>(getTopBarSettings());
   const [contactDraft, setContactDraft] = useState<ContactSectionSettings>(getContactSettings());
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     void hydrateSectionValue(topBarStorageKey, defaultTopBarSettings, topBarStorageKey).then(
@@ -41,6 +52,19 @@ export default function AdminTopBarPage() {
   }, []);
 
   const saveTopBar = async () => {
+    const validations = [
+      validateRequiredText(topBarDraft.topLineLeft, "Left text"),
+      validateRequiredText(topBarDraft.topLineRight, "Right text"),
+      validatePhone(contactDraft.phone, "Phone"),
+      validatePhone(contactDraft.whatsapp, "WhatsApp")
+    ].filter(Boolean) as string[];
+
+    if (validations.length > 0) {
+      setSaveError(validations[0]);
+      return;
+    }
+
+    setSaveError(null);
     await saveSectionValue(topBarStorageKey, topBarDraft, topBarStorageKey);
     await saveSectionValue(contactStorageKey, contactDraft, contactStorageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
@@ -52,6 +76,8 @@ export default function AdminTopBarPage() {
     await saveSectionValue(topBarStorageKey, defaultTopBarSettings, topBarStorageKey);
     await saveSectionValue(contactStorageKey, defaultContactSettings, contactStorageKey);
     setSavedAt(null);
+    setSaveError(null);
+    setResetOpen(false);
   };
 
   return (
@@ -121,11 +147,12 @@ export default function AdminTopBarPage() {
                       <Button variant="contained" onClick={saveTopBar} startIcon={<SaveRoundedIcon />}>
                         Save Above Header
                       </Button>
-                      <Button variant="outlined" onClick={resetTopBar}>
+                      <Button variant="outlined" onClick={() => setResetOpen(true)}>
                         Reset to Defaults
                       </Button>
                     </Stack>
 
+                    {saveError ? <Alert severity="error">{saveError}</Alert> : null}
                     {savedAt ? <Chip label={`Saved at ${savedAt}`} color="success" variant="outlined" /> : null}
                   </Stack>
                 </CardContent>
@@ -148,6 +175,19 @@ export default function AdminTopBarPage() {
           </Grid>
         </Stack>
       </Container>
+
+      <Dialog open={resetOpen} onClose={() => setResetOpen(false)}>
+        <DialogTitle>Reset above-header settings?</DialogTitle>
+        <DialogContent>
+          This will restore the top strip text and contact numbers to the default content.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetOpen(false)}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={() => void resetTopBar()}>
+            Reset
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

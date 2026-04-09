@@ -1,10 +1,15 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Chip,
   Container,
   Grid,
@@ -17,12 +22,18 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { defaultContactSettings, getContactSettings, type ContactSectionSettings } from "../../data/siteContent";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import {
+  validateEmail,
+  validatePhone
+} from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-contact";
 
 export default function AdminContactPage() {
   const [draft, setDraft] = useState<ContactSectionSettings>(getContactSettings());
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     void hydrateSectionValue(storageKey, defaultContactSettings, storageKey).then((value) => {
@@ -31,6 +42,18 @@ export default function AdminContactPage() {
   }, []);
 
   const saveContact = async () => {
+    const validations = [
+      validatePhone(draft.phone, "Phone"),
+      validatePhone(draft.whatsapp, "WhatsApp"),
+      validateEmail(draft.email)
+    ].filter(Boolean) as string[];
+
+    if (validations.length > 0) {
+      setSaveError(validations[0]);
+      return;
+    }
+
+    setSaveError(null);
     await saveSectionValue(storageKey, draft, storageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
@@ -39,6 +62,8 @@ export default function AdminContactPage() {
     setDraft(defaultContactSettings);
     await saveSectionValue(storageKey, defaultContactSettings, storageKey);
     setSavedAt(null);
+    setSaveError(null);
+    setResetOpen(false);
   };
 
   return (
@@ -99,11 +124,12 @@ export default function AdminContactPage() {
                       <Button variant="contained" onClick={saveContact} startIcon={<SaveRoundedIcon />}>
                         Save Contact
                       </Button>
-                      <Button variant="outlined" onClick={resetContact}>
+                      <Button variant="outlined" onClick={() => setResetOpen(true)}>
                         Reset to Defaults
                       </Button>
                     </Stack>
 
+                    {saveError ? <Alert severity="error">{saveError}</Alert> : null}
                     {savedAt ? <Chip label={`Saved at ${savedAt}`} color="success" variant="outlined" /> : null}
                   </Stack>
                 </CardContent>
@@ -125,6 +151,19 @@ export default function AdminContactPage() {
           </Grid>
         </Stack>
       </Container>
+
+      <Dialog open={resetOpen} onClose={() => setResetOpen(false)}>
+        <DialogTitle>Reset contact info?</DialogTitle>
+        <DialogContent>
+          This will restore the phone, WhatsApp, and email values to the default content.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetOpen(false)}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={() => void resetContact()}>
+            Reset
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

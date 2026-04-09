@@ -1,10 +1,15 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Chip,
   Container,
   Grid,
@@ -21,12 +26,18 @@ import {
   type AppointmentSectionSettings
 } from "../../data/siteContent";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import {
+  validateMinimumLines,
+  validateRequiredText
+} from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-appointment";
 
 export default function AdminAppointmentPage() {
   const [draft, setDraft] = useState<AppointmentSectionSettings>(getAppointmentSettings());
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     void hydrateSectionValue(storageKey, defaultAppointmentSettings, storageKey).then((value) => {
@@ -37,6 +48,20 @@ export default function AdminAppointmentPage() {
   const bulletsText = useMemo(() => draft.bullets.join("\n"), [draft.bullets]);
 
   const saveAppointment = async () => {
+    const validations = [
+      validateRequiredText(draft.eyebrow, "Eyebrow"),
+      validateRequiredText(draft.title, "Title"),
+      validateRequiredText(draft.description, "Description"),
+      validateMinimumLines(draft.bullets, "Bullets", 1),
+      validateRequiredText(draft.quote, "Quote")
+    ].filter(Boolean) as string[];
+
+    if (validations.length > 0) {
+      setSaveError(validations[0]);
+      return;
+    }
+
+    setSaveError(null);
     await saveSectionValue(storageKey, draft, storageKey);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
@@ -45,6 +70,8 @@ export default function AdminAppointmentPage() {
     setDraft(defaultAppointmentSettings);
     await saveSectionValue(storageKey, defaultAppointmentSettings, storageKey);
     setSavedAt(null);
+    setSaveError(null);
+    setResetOpen(false);
   };
 
   return (
@@ -133,11 +160,12 @@ export default function AdminAppointmentPage() {
                       <Button variant="contained" onClick={saveAppointment} startIcon={<SaveRoundedIcon />}>
                         Save Appointment
                       </Button>
-                      <Button variant="outlined" onClick={resetAppointment}>
+                      <Button variant="outlined" onClick={() => setResetOpen(true)}>
                         Reset to Defaults
                       </Button>
                     </Stack>
 
+                    {saveError ? <Alert severity="error">{saveError}</Alert> : null}
                     {savedAt ? <Chip label={`Saved at ${savedAt}`} color="success" variant="outlined" /> : null}
                   </Stack>
                 </CardContent>
@@ -163,6 +191,19 @@ export default function AdminAppointmentPage() {
           </Grid>
         </Stack>
       </Container>
+
+      <Dialog open={resetOpen} onClose={() => setResetOpen(false)}>
+        <DialogTitle>Reset appointment section?</DialogTitle>
+        <DialogContent>
+          This will restore the appointment callout, bullets, and quote to the default content.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetOpen(false)}>Cancel</Button>
+          <Button color="error" variant="contained" onClick={() => void resetAppointment()}>
+            Reset
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
