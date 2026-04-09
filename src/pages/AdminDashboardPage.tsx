@@ -622,12 +622,18 @@ export default function AdminDashboardPage() {
             spacing={2}
           >
             <Box>
+              <Chip
+                label="Dashboard overview"
+                size="small"
+                variant="outlined"
+                sx={{ mb: 1, borderColor: "rgba(31,157,148,0.24)", color: "primary.main" }}
+              />
               <Typography variant="h2" sx={{ lineHeight: 1.05, mb: 1 }}>
                 Admin Dashboard
               </Typography>
               <Typography color="text.secondary" sx={{ maxWidth: 760 }}>
-                Track visitor volume, consultation intent, and real booking conversion across
-                daily, weekly, and monthly views.
+                Review traffic, leads, and confirmed bookings across daily, weekly, and monthly
+                views.
               </Typography>
             </Box>
 
@@ -643,7 +649,7 @@ export default function AdminDashboardPage() {
                 onClick={() => void refreshDashboardData()}
                 disabled={isSyncing}
               >
-                {isSyncing ? "Syncing..." : "Sync Data"}
+                {isSyncing ? "Syncing..." : "Sync latest data"}
               </Button>
               <Button
                 variant="contained"
@@ -651,7 +657,7 @@ export default function AdminDashboardPage() {
                 onClick={() => void handleExportReport()}
                 disabled={isExporting}
               >
-                {isExporting ? "Exporting..." : "Export Report"}
+                {isExporting ? "Exporting..." : "Export report"}
               </Button>
             </Stack>
           </Stack>
@@ -745,14 +751,47 @@ export default function AdminDashboardPage() {
                 >
                   <Box>
                     <Typography variant="h5" sx={{ mb: 0.75 }}>
-                      Consultation Leads
+                      Lead Board
                     </Typography>
                     <Typography color="text.secondary">
-                      Review booking enquiries and update their pipeline status from the lead board.
+                      Review booking enquiries and update their pipeline status from here.
                     </Typography>
                   </Box>
                   <Button component={Link} to="/admin/leads" variant="contained">
-                    Open Leads Board
+                    Open lead board
+                  </Button>
+                </Stack>
+              </Paper>
+            </Grid>
+          ) : null}
+          {permissions.media ? (
+            <Grid size={{ xs: 12, lg: 12 }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  borderRadius: 3,
+                  border: "1px solid rgba(224,182,111,0.16)",
+                  background: "linear-gradient(180deg, #fffdf8 0%, #fff7eb 100%)",
+                  boxShadow: "0 18px 48px rgba(16,42,67,0.06)"
+                }}
+              >
+                <Stack
+                  direction={{ xs: "column", md: "row" }}
+                  justifyContent="space-between"
+                  alignItems={{ xs: "flex-start", md: "center" }}
+                  spacing={2}
+                >
+                  <Box>
+                    <Typography variant="h5" sx={{ mb: 0.75 }}>
+                      Media Library
+                    </Typography>
+                    <Typography color="text.secondary">
+                      View uploaded clinic images, copy their URLs, and keep alt text ready for reuse.
+                    </Typography>
+                  </Box>
+                  <Button component={Link} to="/admin/media" variant="contained">
+                    Open media library
                   </Button>
                 </Stack>
               </Paper>
@@ -782,14 +821,14 @@ export default function AdminDashboardPage() {
                     <Typography variant="h4" sx={{ mb: 0.75 }}>
                       Traffic Trend
                     </Typography>
-                  <Typography color="text.secondary">
-                    Site visitors for the selected period
-                  </Typography>
-                </Box>
+                    <Typography color="text.secondary">
+                      Site visitors for the selected period
+                    </Typography>
+                  </Box>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Chip
                       icon={<CheckCircleOutlineIcon />}
-                      label={`${data.label} overview`}
+                      label={`${data.label} view`}
                       color="primary"
                       variant="outlined"
                     />
@@ -906,7 +945,7 @@ export default function AdminDashboardPage() {
             >
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h5" sx={{ mb: 2 }}>
-                  Current Booking Status
+                  Booking Snapshot
                 </Typography>
                 <Stack spacing={1.5}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -937,7 +976,7 @@ export default function AdminDashboardPage() {
             >
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h5" sx={{ mb: 2 }}>
-                  Recent Leads
+                  Latest Leads
                 </Typography>
                 <Stack spacing={1.5}>
                   {data.recentLeads.slice(0, 3).map((lead) => (
@@ -1053,11 +1092,11 @@ export default function AdminDashboardPage() {
                       Manage Site Content
                     </Typography>
                     <Typography color="text.secondary">
-                      Open each content area in its own page so the layout stays clean and the
-                      editing tools are easier to use.
+                      Open each content area in its own page so editing stays focused and easy to
+                      scan.
                     </Typography>
                   </Box>
-                  <Typography color="text.secondary">Separate admin pages</Typography>
+                  <Typography color="text.secondary">Separate editor pages</Typography>
                 </Stack>
 
                 <Grid container spacing={2.5}>
@@ -1066,7 +1105,7 @@ export default function AdminDashboardPage() {
                       <Grid size={{ xs: 12, md: 4 }}>
                         <ContentLinkCard
                           title="Above Header"
-                          description="Edit the thin top strip's details shown above the header."
+                          description="Edit the thin strip shown above the header. Like timings & contacts."
                           to="/admin/above-header"
                           accent="warning"
                         />
@@ -1082,7 +1121,7 @@ export default function AdminDashboardPage() {
                       <Grid size={{ xs: 12, md: 4 }}>
                         <ContentLinkCard
                           title="Home Section"
-                          description="Edit the hero copy, hero image, and bullet points used on the home page."
+                          description="Edit the hero copy, image, and bullet points used on the home page."
                           to="/admin/home"
                           accent="primary"
                         />

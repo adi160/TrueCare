@@ -24,6 +24,7 @@ import { defaultContactSettings, getContactSettings, type ContactSectionSettings
 import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import {
+  validateMaxLength,
   validateEmail,
   validatePhone
 } from "../../utils/adminValidation";
@@ -46,8 +47,11 @@ export default function AdminContactPage() {
   const saveContact = async () => {
     const validations = [
       validatePhone(draft.phone, "Phone"),
+      validateMaxLength(draft.phone, "Phone", 40),
       validatePhone(draft.whatsapp, "WhatsApp"),
-      validateEmail(draft.email)
+      validateMaxLength(draft.whatsapp, "WhatsApp", 40),
+      validateEmail(draft.email),
+      validateMaxLength(draft.email, "Email", 80)
     ].filter(Boolean) as string[];
 
     if (validations.length > 0) {
@@ -104,6 +108,7 @@ export default function AdminContactPage() {
                         setDraft((current) => ({ ...current, phone: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 40 }}
                     />
                     <TextField
                       label="WhatsApp"
@@ -112,6 +117,7 @@ export default function AdminContactPage() {
                         setDraft((current) => ({ ...current, whatsapp: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 40 }}
                     />
                     <TextField
                       label="Email"
@@ -120,6 +126,7 @@ export default function AdminContactPage() {
                         setDraft((current) => ({ ...current, email: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 80 }}
                     />
 
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>

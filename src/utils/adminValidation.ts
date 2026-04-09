@@ -6,6 +6,16 @@ export function validateRequiredText(value: string, label: string): string | nul
   return `${label} is required.`;
 }
 
+export function validateMaxLength(value: string, label: string, maxLength: number): string | null {
+  const trimmed = value.trim();
+
+  if (trimmed.length <= maxLength) {
+    return null;
+  }
+
+  return `${label} must be ${maxLength} characters or fewer.`;
+}
+
 export function validateMinimumLines(
   value: string[],
   label: string,
@@ -34,6 +44,29 @@ export function validateUrl(value: string, label: string, allowBlank = false): s
     }
   } catch {
     return `${label} must be a valid URL.`;
+  }
+
+  return null;
+}
+
+export function validateImageUrl(value: string, label: string, allowBlank = false): string | null {
+  const baseError = validateUrl(value, label, allowBlank);
+
+  if (baseError) {
+    return baseError;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const looksLikeImage =
+    /\.(avif|gif|jpeg|jpg|png|webp|svg)(\?.*)?$/i.test(trimmed) ||
+    trimmed.includes("/storage/v1/object/public/");
+
+  if (!looksLikeImage) {
+    return `${label} should point to an image file or Supabase Storage URL.`;
   }
 
   return null;

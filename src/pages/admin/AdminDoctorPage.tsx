@@ -24,10 +24,12 @@ import { defaultDoctorProfile, getDoctorProfile } from "../../data/siteContent";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import { registerMediaAssetFromUrl } from "../../services/backend";
 import {
   validateMinimumLines,
+  validateMaxLength,
   validateRequiredText,
-  validateUrl
+  validateImageUrl
 } from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-doctor";
@@ -52,11 +54,16 @@ export default function AdminDoctorPage() {
   const saveDoctor = async () => {
     const validations = [
       validateRequiredText(draft.doctorName, "Doctor name"),
+      validateMaxLength(draft.doctorName, "Doctor name", 80),
       validateRequiredText(draft.doctorBio, "Doctor bio"),
+      validateMaxLength(draft.doctorBio, "Doctor bio", 240),
       validateRequiredText(draft.title, "Profile title"),
+      validateMaxLength(draft.title, "Profile title", 80),
       validateRequiredText(draft.summary, "Summary"),
-      validateUrl(draft.image, "Profile image URL"),
+      validateMaxLength(draft.summary, "Summary", 220),
+      validateImageUrl(draft.image, "Profile image URL"),
       validateRequiredText(draft.experience, "Experience"),
+      validateMaxLength(draft.experience, "Experience", 60),
       validateMinimumLines(draft.qualifications, "Qualifications", 1),
       validateMinimumLines(draft.expertise, "Expertise", 1),
       validateMinimumLines(draft.philosophy, "Philosophy", 1)
@@ -69,6 +76,7 @@ export default function AdminDoctorPage() {
 
     setSaveError(null);
     await saveSectionValue(storageKey, draft, storageKey);
+    await registerMediaAssetFromUrl(draft.image, draft.doctorName);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
 
@@ -117,6 +125,7 @@ export default function AdminDoctorPage() {
                         setDraft((current) => ({ ...current, doctorName: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 80 }}
                     />
                     <TextField
                       label="Doctor bio"
@@ -127,6 +136,7 @@ export default function AdminDoctorPage() {
                       fullWidth
                       multiline
                       minRows={2}
+                      inputProps={{ maxLength: 240 }}
                     />
                     <TextField
                       label="Profile title"
@@ -135,6 +145,7 @@ export default function AdminDoctorPage() {
                         setDraft((current) => ({ ...current, title: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 80 }}
                     />
                     <TextField
                       label="Summary"
@@ -145,6 +156,7 @@ export default function AdminDoctorPage() {
                       fullWidth
                       multiline
                       minRows={3}
+                      inputProps={{ maxLength: 220 }}
                     />
                     <ImageUploadField
                       label="Profile image URL"
@@ -152,6 +164,7 @@ export default function AdminDoctorPage() {
                       value={draft.image}
                       onChange={(value) => setDraft((current) => ({ ...current, image: value }))}
                       previewAlt={draft.doctorName}
+                      previewHeight={260}
                       helperText="Upload the doctor image once and the live doctor sections will use it everywhere."
                     />
                     <TextField
@@ -161,6 +174,7 @@ export default function AdminDoctorPage() {
                         setDraft((current) => ({ ...current, experience: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 60 }}
                     />
                     <TextField
                       label="Qualifications"
@@ -178,6 +192,7 @@ export default function AdminDoctorPage() {
                       fullWidth
                       multiline
                       minRows={4}
+                      inputProps={{ maxLength: 500 }}
                     />
                     <TextField
                       label="Expertise"
@@ -195,6 +210,7 @@ export default function AdminDoctorPage() {
                       fullWidth
                       multiline
                       minRows={4}
+                      inputProps={{ maxLength: 500 }}
                     />
                     <TextField
                       label="Philosophy"
@@ -212,6 +228,7 @@ export default function AdminDoctorPage() {
                       fullWidth
                       multiline
                       minRows={4}
+                      inputProps={{ maxLength: 500 }}
                     />
 
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>

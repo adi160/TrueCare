@@ -27,10 +27,12 @@ import type { Service } from "../../types/clinic";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import { registerMediaAssetFromUrl } from "../../services/backend";
 import {
   validateMinimumLines,
+  validateMaxLength,
   validateRequiredText,
-  validateUrl
+  validateImageUrl
 } from "../../utils/adminValidation";
 
 const storageKey = "truecare-extra-services";
@@ -108,10 +110,14 @@ export default function AdminServicesPage() {
   const saveService = () => {
     const validations = [
       validateRequiredText(draft.name, "Service name"),
+      validateMaxLength(draft.name, "Service name", 80),
       validateRequiredText(draft.slug || createServiceSlug(draft.name), "Slug"),
+      validateMaxLength(draft.slug || createServiceSlug(draft.name), "Slug", 60),
       validateRequiredText(draft.shortDescription, "Short description"),
-      validateUrl(draft.heroImage, "Hero image URL"),
+      validateMaxLength(draft.shortDescription, "Short description", 110),
+      validateImageUrl(draft.heroImage, "Hero image URL"),
       validateRequiredText(draft.details, "Details"),
+      validateMaxLength(draft.details, "Details", 280),
       validateMinimumLines(
         draft.benefitsText
           .split(",")
@@ -168,6 +174,7 @@ export default function AdminServicesPage() {
       : [...services, nextService];
 
     void persist(nextServices);
+    void registerMediaAssetFromUrl(nextService.heroImage, nextService.name);
     resetDraft();
   };
 
@@ -224,6 +231,7 @@ export default function AdminServicesPage() {
                         setDraft((current) => ({ ...current, name: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 80 }}
                     />
                     <TextField
                       label="Slug"
@@ -233,6 +241,7 @@ export default function AdminServicesPage() {
                       }
                       helperText="Leave blank to auto-generate from the name."
                       fullWidth
+                      inputProps={{ maxLength: 60 }}
                     />
                     <TextField
                       label="Short description"
@@ -257,6 +266,7 @@ export default function AdminServicesPage() {
                       value={draft.heroImage}
                       onChange={(value) => setDraft((current) => ({ ...current, heroImage: value }))}
                       previewAlt={draft.name || "Service image"}
+                      previewHeight={220}
                       helperText="Upload a service image or paste a URL. This image will appear on the service card and page."
                     />
                     <TextField
@@ -268,6 +278,7 @@ export default function AdminServicesPage() {
                       fullWidth
                       multiline
                       minRows={4}
+                      inputProps={{ maxLength: 280 }}
                     />
                     <TextField
                       label="Benefits"
@@ -277,6 +288,7 @@ export default function AdminServicesPage() {
                       }
                       helperText="Separate each benefit with a comma."
                       fullWidth
+                      inputProps={{ maxLength: 500 }}
                     />
 
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>

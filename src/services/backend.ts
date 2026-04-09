@@ -1,5 +1,6 @@
 import { dashboardPeriods, type DashboardPeriodData, type DashboardPeriodKey } from "../data/adminDashboard";
 import { getSupabaseClient, hasSupabaseConfig } from "../lib/supabaseClient";
+import { clinicAssetsBucket, type MediaAssetRecord } from "./mediaUpload";
 import type { AppointmentApiResponse, AppointmentSubmission } from "../types/clinic";
 
 export interface VisitorEventPayload {
@@ -26,6 +27,8 @@ export interface AdminLeadEntry extends ConsultationLeadRecord {
 export interface LiveDashboardData extends DashboardPeriodData {
   live: boolean;
 }
+
+export type LiveMediaAsset = MediaAssetRecord;
 
 function createReferenceId(): string {
   return `TC-${Date.now().toString().slice(-6)}`;
@@ -298,6 +301,196 @@ export async function bulkUpdateConsultationLeadStatuses(
     success: true,
     message: `Updated ${updatedCount} lead${updatedCount === 1 ? "" : "s"}.`,
     updatedCount
+  };
+}
+
+export async function loadMediaAssets(limit = 48): Promise<MediaAssetRecord[]> {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    return [];
+  }
+
+  const { data, error } = await client
+    .from("media_assets")
+    .select("id, bucket, object_path, public_url, alt_text, created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => ({
+    id: row.id,
+    bucket: row.bucket,
+    objectPath: row.object_path,
+    publicUrl: row.public_url,
+    altText: row.alt_text ?? null,
+    createdAt: row.created_at
+  }));
+}
+
+export async function updateMediaAssetAltText(
+  id: number,
+  altText: string
+): Promise<{ success: boolean; message: string }> {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    return {
+      success: false,
+      message: "Supabase is not configured."
+    };
+  }
+
+  const { error } = await client
+    .from("media_assets")
+    .update({ alt_text: altText.trim() || null })
+    .eq("id", id);
+
+  if (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+
+  return {
+    success: true,
+    message: "Media asset updated."
+  };
+}
+
+function parseClinicStorageAsset(publicUrl: string): { bucket: string; objectPath: string } | null {
+  try {
+    const parsed = new URL(publicUrl);
+    const marker = "/storage/v1/object/public/";
+    const markerIndex = parsed.pathname.indexOf(marker);
+
+    if (markerIndex < 0) {
+      return null;
+    }
+
+    const remainder = parsed.pathname.slice(markerIndex + marker.length);
+    const [bucket, ...pathParts] = remainder.split("/").filter(Boolean);
+
+    if (!bucket || pathParts.length === 0) {
+      return null;
+    }
+
+    return {
+      bucket,
+      objectPath: pathParts.join("/")
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function registerMediaAssetFromUrl(
+  publicUrl: string,
+  altText: string | null = null
+): Promise<{ success: boolean; message: string }> {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    return {
+      success: false,
+      message: "Supabase is not configured."
+    };
+  }
+
+  const parsed = parseClinicStorageAsset(publicUrl);
+  if (!parsed) {
+    return {
+      success: true,
+      message: "Skipped non-storage image URL."
+    };
+  }
+
+  const { data: userData } = await client.auth.getUser();
+  const { data: existing } = await client
+    .from("media_assets")
+    .select("id, alt_text")
+    .eq("public_url", publicUrl)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await client
+      .from("media_assets")
+      .update({
+        alt_text: altText?.trim() || null,
+        created_by: userData.user?.id ?? null
+      })
+      .eq("id", existing.id);
+
+    if (error) {
+      return {
+        success: false,
+        message: error.message
+      };
+    }
+
+    return {
+      success: true,
+      message: "Media asset updated."
+    };
+  }
+
+  const { error } = await client.from("media_assets").insert({
+    bucket: parsed.bucket,
+    object_path: parsed.objectPath,
+    public_url: publicUrl,
+    alt_text: altText?.trim() || null,
+    created_by: userData.user?.id ?? null
+  });
+
+  if (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+
+  return {
+    success: true,
+    message: "Media asset saved."
+  };
+}
+
+export async function deleteMediaAsset(
+  asset: MediaAssetRecord
+): Promise<{ success: boolean; message: string }> {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    return {
+      success: false,
+      message: "Supabase is not configured."
+    };
+  }
+
+  const { error: storageError } = await client.storage.from(clinicAssetsBucket).remove([asset.objectPath]);
+  if (storageError) {
+    return {
+      success: false,
+      message: storageError.message
+    };
+  }
+
+  const { error } = await client.from("media_assets").delete().eq("id", asset.id);
+
+  if (error) {
+    return {
+      success: false,
+      message: error.message
+    };
+  }
+
+  return {
+    success: true,
+    message: "Media asset deleted."
   };
 }
 

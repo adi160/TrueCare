@@ -27,7 +27,7 @@ import {
 } from "../../data/siteContent";
 import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
-import { validateRequiredText } from "../../utils/adminValidation";
+import { validateMaxLength, validateRequiredText } from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-header";
 
@@ -47,7 +47,9 @@ export default function AdminHeaderPage() {
   const saveHeader = async () => {
     const validations = [
       validateRequiredText(draft.clinicName, "Clinic name"),
-      validateRequiredText(draft.tagline, "Subtitle")
+      validateMaxLength(draft.clinicName, "Clinic name", 60),
+      validateRequiredText(draft.tagline, "Subtitle"),
+      validateMaxLength(draft.tagline, "Subtitle", 100)
     ].filter(Boolean) as string[];
 
     if (validations.length > 0) {
@@ -105,6 +107,7 @@ export default function AdminHeaderPage() {
                         setDraft((current) => ({ ...current, clinicName: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 60 }}
                     />
                     <TextField
                       label="Subtitle"
@@ -115,6 +118,7 @@ export default function AdminHeaderPage() {
                       fullWidth
                       multiline
                       minRows={2}
+                      inputProps={{ maxLength: 100 }}
                     />
 
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>

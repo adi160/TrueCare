@@ -25,6 +25,7 @@ import type { ContactSectionSettings, SiteTopBarSettings } from "../../data/site
 import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import {
+  validateMaxLength,
   validatePhone,
   validateRequiredText
 } from "../../utils/adminValidation";
@@ -56,9 +57,13 @@ export default function AdminTopBarPage() {
   const saveTopBar = async () => {
     const validations = [
       validateRequiredText(topBarDraft.topLineLeft, "Left text"),
+      validateMaxLength(topBarDraft.topLineLeft, "Left text", 80),
       validateRequiredText(topBarDraft.topLineRight, "Right text"),
+      validateMaxLength(topBarDraft.topLineRight, "Right text", 80),
       validatePhone(contactDraft.phone, "Phone"),
-      validatePhone(contactDraft.whatsapp, "WhatsApp")
+      validateMaxLength(contactDraft.phone, "Phone", 40),
+      validatePhone(contactDraft.whatsapp, "WhatsApp"),
+      validateMaxLength(contactDraft.whatsapp, "WhatsApp", 40)
     ].filter(Boolean) as string[];
 
     if (validations.length > 0) {
@@ -119,6 +124,7 @@ export default function AdminTopBarPage() {
                         setTopBarDraft((current) => ({ ...current, topLineLeft: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 80 }}
                     />
                     <TextField
                       label="Right text"
@@ -127,6 +133,7 @@ export default function AdminTopBarPage() {
                         setTopBarDraft((current) => ({ ...current, topLineRight: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 80 }}
                     />
                     <TextField
                       label="Phone"
@@ -135,6 +142,7 @@ export default function AdminTopBarPage() {
                         setContactDraft((current) => ({ ...current, phone: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 40 }}
                     />
                     <TextField
                       label="WhatsApp"
@@ -143,6 +151,7 @@ export default function AdminTopBarPage() {
                         setContactDraft((current) => ({ ...current, whatsapp: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 40 }}
                     />
 
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>

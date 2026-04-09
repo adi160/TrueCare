@@ -63,6 +63,10 @@ export function getAdminAccessArea(pathname: string): AdminAccessArea {
     return "leads";
   }
 
+  if (pathname.startsWith("/admin/media")) {
+    return "media";
+  }
+
   if (pathname.startsWith("/admin/")) {
     return "content";
   }

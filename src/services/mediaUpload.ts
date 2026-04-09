@@ -2,6 +2,15 @@ import { getSupabaseClient, hasSupabaseConfig } from "../lib/supabaseClient";
 
 export const clinicAssetsBucket = "clinic-assets";
 
+export interface MediaAssetRecord {
+  id: number;
+  bucket: string;
+  objectPath: string;
+  publicUrl: string;
+  altText: string | null;
+  createdAt: string;
+}
+
 function sanitizeSegment(value: string): string {
   return value
     .trim()
@@ -57,17 +66,6 @@ export async function uploadClinicAsset(file: File, folder: string): Promise<str
 
   if (!publicUrl) {
     throw new Error("Unable to create a public URL for the uploaded file.");
-  }
-
-  try {
-    await client.from("media_assets").insert({
-      bucket: clinicAssetsBucket,
-      object_path: objectPath,
-      public_url: publicUrl,
-      alt_text: null
-    });
-  } catch {
-    // Media metadata is helpful, but the uploaded image itself is the primary output.
   }
 
   return publicUrl;

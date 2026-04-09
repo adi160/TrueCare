@@ -27,7 +27,7 @@ import {
 } from "../../data/siteContent";
 import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
-import { validateRequiredText, validateUrl } from "../../utils/adminValidation";
+import { validateMaxLength, validateRequiredText, validateUrl } from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-footer";
 
@@ -61,8 +61,11 @@ export default function AdminFooterPage() {
       .filter(Boolean) as string[];
     const validations = [
       validateRequiredText(nextDraft.address, "Address"),
+      validateMaxLength(nextDraft.address, "Address", 180),
       validateRequiredText(nextDraft.note, "Footer note"),
+      validateMaxLength(nextDraft.note, "Footer note", 140),
       validateRequiredText(nextDraft.copyrightNote, "Copyright note"),
+      validateMaxLength(nextDraft.copyrightNote, "Copyright note", 100),
       ...socialErrors
     ].filter(Boolean) as string[];
 
@@ -123,6 +126,7 @@ export default function AdminFooterPage() {
                       fullWidth
                       multiline
                       minRows={3}
+                      inputProps={{ maxLength: 180 }}
                     />
                     <TextField
                       label="Footer note"
@@ -133,6 +137,7 @@ export default function AdminFooterPage() {
                       fullWidth
                       multiline
                       minRows={2}
+                      inputProps={{ maxLength: 140 }}
                     />
                     <TextField
                       label="Copyright note"
@@ -141,6 +146,7 @@ export default function AdminFooterPage() {
                         setDraft((current) => ({ ...current, copyrightNote: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 100 }}
                     />
 
                     <TextField
@@ -161,6 +167,7 @@ export default function AdminFooterPage() {
                         }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 180 }}
                     />
                     <TextField
                       label="Facebook link"
@@ -180,6 +187,7 @@ export default function AdminFooterPage() {
                         }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 180 }}
                     />
                     <TextField
                       label="YouTube link"
@@ -199,6 +207,7 @@ export default function AdminFooterPage() {
                         }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 180 }}
                     />
                     <TextField
                       label="LinkedIn link"
@@ -218,6 +227,7 @@ export default function AdminFooterPage() {
                         }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 180 }}
                     />
 
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>

@@ -26,9 +26,11 @@ import type { GalleryItem } from "../../data/gallery";
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import { registerMediaAssetFromUrl } from "../../services/backend";
 import {
+  validateMaxLength,
   validateRequiredText,
-  validateUrl
+  validateImageUrl
 } from "../../utils/adminValidation";
 
 const storageKey = "truecare-extra-gallery-items";
@@ -68,10 +70,13 @@ export default function AdminGalleryPage() {
 
     const validations = [
       validateRequiredText(nextItem.title, "Card title"),
+      validateMaxLength(nextItem.title, "Card title", 80),
       validateRequiredText(nextItem.treatment, "Treatment name"),
+      validateMaxLength(nextItem.treatment, "Treatment name", 80),
       validateRequiredText(nextItem.description, "Description"),
-      validateUrl(nextItem.beforeImage, "Before image URL"),
-      validateUrl(nextItem.afterImage, "After image URL")
+      validateMaxLength(nextItem.description, "Description", 140),
+      validateImageUrl(nextItem.beforeImage, "Before image URL"),
+      validateImageUrl(nextItem.afterImage, "After image URL")
     ].filter(Boolean) as string[];
 
     if (validations.length > 0) {
@@ -81,6 +86,8 @@ export default function AdminGalleryPage() {
 
     setSaveError(null);
     void persist([...galleryItems, nextItem]);
+    void registerMediaAssetFromUrl(nextItem.beforeImage, `${nextItem.title} before`);
+    void registerMediaAssetFromUrl(nextItem.afterImage, `${nextItem.title} after`);
     setDraft({
       title: "",
       treatment: "",
@@ -132,6 +139,7 @@ export default function AdminGalleryPage() {
                         setDraft((current) => ({ ...current, title: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 80 }}
                     />
                     <TextField
                       label="Treatment name"
@@ -140,6 +148,7 @@ export default function AdminGalleryPage() {
                         setDraft((current) => ({ ...current, treatment: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 80 }}
                     />
                     <TextField
                       label="Description"
@@ -150,6 +159,7 @@ export default function AdminGalleryPage() {
                       fullWidth
                       multiline
                       minRows={3}
+                      inputProps={{ maxLength: 140 }}
                     />
                     <ImageUploadField
                       label="Before image URL"
@@ -159,6 +169,7 @@ export default function AdminGalleryPage() {
                         setDraft((current) => ({ ...current, beforeImage: value }))
                       }
                       previewAlt={`${draft.title || "Gallery"} before`}
+                      previewHeight={170}
                       helperText="Upload the before image or paste its URL."
                     />
                     <ImageUploadField
@@ -169,6 +180,7 @@ export default function AdminGalleryPage() {
                         setDraft((current) => ({ ...current, afterImage: value }))
                       }
                       previewAlt={`${draft.title || "Gallery"} after`}
+                      previewHeight={170}
                       helperText="Upload the after image or paste its URL."
                     />
 

@@ -29,6 +29,7 @@ import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
 import {
   validateMinimumLines,
+  validateMaxLength,
   validateRequiredText
 } from "../../utils/adminValidation";
 
@@ -52,10 +53,14 @@ export default function AdminAppointmentPage() {
   const saveAppointment = async () => {
     const validations = [
       validateRequiredText(draft.eyebrow, "Eyebrow"),
+      validateMaxLength(draft.eyebrow, "Eyebrow", 45),
       validateRequiredText(draft.title, "Title"),
+      validateMaxLength(draft.title, "Title", 90),
       validateRequiredText(draft.description, "Description"),
+      validateMaxLength(draft.description, "Description", 180),
       validateMinimumLines(draft.bullets, "Bullets", 1),
-      validateRequiredText(draft.quote, "Quote")
+      validateRequiredText(draft.quote, "Quote"),
+      validateMaxLength(draft.quote, "Quote", 180)
     ].filter(Boolean) as string[];
 
     if (validations.length > 0) {
@@ -112,6 +117,7 @@ export default function AdminAppointmentPage() {
                         setDraft((current) => ({ ...current, eyebrow: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 45 }}
                     />
                     <TextField
                       label="Title"
@@ -122,6 +128,7 @@ export default function AdminAppointmentPage() {
                       fullWidth
                       multiline
                       minRows={2}
+                      inputProps={{ maxLength: 90 }}
                     />
                     <TextField
                       label="Description"
@@ -132,6 +139,7 @@ export default function AdminAppointmentPage() {
                       fullWidth
                       multiline
                       minRows={3}
+                      inputProps={{ maxLength: 180 }}
                     />
                     <TextField
                       label="Bullets"
@@ -146,6 +154,7 @@ export default function AdminAppointmentPage() {
                       fullWidth
                       multiline
                       minRows={4}
+                      inputProps={{ maxLength: 600 }}
                     />
                     <TextField
                       label="Quote"
@@ -156,6 +165,7 @@ export default function AdminAppointmentPage() {
                       fullWidth
                       multiline
                       minRows={3}
+                      inputProps={{ maxLength: 180 }}
                     />
 
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>

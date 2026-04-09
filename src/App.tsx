@@ -10,6 +10,7 @@ import AdminHeaderPage from "./pages/admin/AdminHeaderPage";
 import AdminHomePage from "./pages/admin/AdminHomePage";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import AdminLeadsPage from "./pages/admin/AdminLeadsPage";
+import AdminMediaLibraryPage from "./pages/admin/AdminMediaLibraryPage";
 import AdminServicesPage from "./pages/admin/AdminServicesPage";
 import AdminTestimonialsPage from "./pages/admin/AdminTestimonialsPage";
 import AdminTopBarPage from "./pages/admin/AdminTopBarPage";
@@ -27,6 +28,7 @@ export default function App() {
       <Route element={<RequireAdmin />}>
         <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/admin/leads" element={<AdminLeadsPage />} />
+        <Route path="/admin/media" element={<AdminMediaLibraryPage />} />
         <Route path="/admin/home" element={<AdminHomePage />} />
         <Route path="/admin/header" element={<AdminHeaderPage />} />
         <Route path="/admin/above-header" element={<AdminTopBarPage />} />

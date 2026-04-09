@@ -28,10 +28,12 @@ import {
 import ImageUploadField from "../../components/admin/ImageUploadField";
 import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
+import { registerMediaAssetFromUrl } from "../../services/backend";
 import {
   validateMinimumLines,
+  validateMaxLength,
   validateRequiredText,
-  validateUrl
+  validateImageUrl
 } from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-home";
@@ -54,11 +56,16 @@ export default function AdminHomePage() {
   const saveHome = async () => {
     const validations = [
       validateRequiredText(draft.heroTitle, "Hero title"),
+      validateMaxLength(draft.heroTitle, "Hero title", 90),
       validateRequiredText(draft.heroTagline, "Hero tagline"),
-      validateUrl(draft.heroImage, "Hero image URL"),
+      validateMaxLength(draft.heroTagline, "Hero tagline", 160),
+      validateImageUrl(draft.heroImage, "Hero image URL"),
       validateRequiredText(draft.heroImageAlt, "Hero image alt text"),
+      validateMaxLength(draft.heroImageAlt, "Hero image alt text", 80),
       validateRequiredText(draft.primaryCtaLabel, "Primary button label"),
+      validateMaxLength(draft.primaryCtaLabel, "Primary button label", 32),
       validateRequiredText(draft.secondaryCtaLabel, "Secondary button label"),
+      validateMaxLength(draft.secondaryCtaLabel, "Secondary button label", 32),
       validateMinimumLines(draft.bulletPoints, "Bullet points", 1)
     ].filter(Boolean) as string[];
 
@@ -69,6 +76,7 @@ export default function AdminHomePage() {
 
     setSaveError(null);
     await saveSectionValue(storageKey, draft, storageKey);
+    await registerMediaAssetFromUrl(draft.heroImage, draft.heroImageAlt);
     setSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   };
 
@@ -119,6 +127,7 @@ export default function AdminHomePage() {
                       fullWidth
                       multiline
                       minRows={2}
+                      inputProps={{ maxLength: 90 }}
                     />
                     <TextField
                       label="Hero tagline"
@@ -129,6 +138,7 @@ export default function AdminHomePage() {
                       fullWidth
                       multiline
                       minRows={2}
+                      inputProps={{ maxLength: 160 }}
                     />
                     <ImageUploadField
                       label="Hero image URL"
@@ -136,15 +146,17 @@ export default function AdminHomePage() {
                       value={draft.heroImage}
                       onChange={(value) => setDraft((current) => ({ ...current, heroImage: value }))}
                       previewAlt={draft.heroImageAlt}
+                      previewHeight={280}
                       helperText="Upload a hero image or paste an image URL. The live home section will use this value."
                     />
                     <TextField
                       label="Hero image alt text"
                       value={draft.heroImageAlt}
                       onChange={(event) =>
-                        setDraft((current) => ({ ...current, heroImageAlt: event.target.value }))
+                      setDraft((current) => ({ ...current, heroImageAlt: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 80 }}
                     />
                     <TextField
                       label="Primary button label"
@@ -156,6 +168,7 @@ export default function AdminHomePage() {
                         }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 32 }}
                     />
                     <TextField
                       label="Secondary button label"
@@ -167,6 +180,7 @@ export default function AdminHomePage() {
                         }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 32 }}
                     />
                     <TextField
                       label="Bullet points"
@@ -184,6 +198,7 @@ export default function AdminHomePage() {
                       fullWidth
                       multiline
                       minRows={5}
+                      inputProps={{ maxLength: 1200 }}
                     />
 
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>

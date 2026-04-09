@@ -25,7 +25,7 @@ import { Link } from "react-router-dom";
 import { defaultPatientTestimonials, getPatientTestimonials } from "../../data/siteContent";
 import { useAdminScrollTop } from "../../hooks/useAdminScrollTop";
 import { hydrateSectionValue, saveSectionValue } from "../../services/siteContentStore";
-import { validateRequiredText } from "../../utils/adminValidation";
+import { validateMaxLength, validateRequiredText } from "../../utils/adminValidation";
 
 const storageKey = "truecare-site-testimonials";
 
@@ -64,8 +64,11 @@ export default function AdminTestimonialsPage() {
   const addItem = () => {
     const validations = [
       validateRequiredText(draft.name, "Patient name"),
+      validateMaxLength(draft.name, "Patient name", 60),
       validateRequiredText(draft.treatment, "Treatment"),
-      validateRequiredText(draft.quote, "Quote")
+      validateMaxLength(draft.treatment, "Treatment", 80),
+      validateRequiredText(draft.quote, "Quote"),
+      validateMaxLength(draft.quote, "Quote", 180)
     ].filter(Boolean) as string[];
 
     if (validations.length > 0) {
@@ -127,6 +130,7 @@ export default function AdminTestimonialsPage() {
                         setDraft((current) => ({ ...current, name: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 60 }}
                     />
                     <TextField
                       label="Treatment"
@@ -135,6 +139,7 @@ export default function AdminTestimonialsPage() {
                         setDraft((current) => ({ ...current, treatment: event.target.value }))
                       }
                       fullWidth
+                      inputProps={{ maxLength: 80 }}
                     />
                     <TextField
                       label="Quote"
@@ -145,6 +150,7 @@ export default function AdminTestimonialsPage() {
                       fullWidth
                       multiline
                       minRows={4}
+                      inputProps={{ maxLength: 180 }}
                     />
 
                     <Button variant="contained" onClick={addItem} startIcon={<SaveRoundedIcon />}>
